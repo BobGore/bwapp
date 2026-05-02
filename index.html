@@ -613,6 +613,7 @@
             <option>Friday</option>
             <option>Saturday</option>
             <option>Sunday</option>
+            <option>Monday</option>
           </select>
         </div>
         <div class="admin-field">
@@ -837,7 +838,7 @@ async function addAgendaItem() {
 
 function renderAgenda() {
   const el = document.getElementById('agenda-content');
-  const days = ['Friday','Saturday','Sunday'];
+  const days = ['Friday','Saturday','Sunday','Monday'];
   let html = '';
   days.forEach(day => {
     const items = agendaItems.filter(i => i.day === day);
