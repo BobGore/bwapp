@@ -522,6 +522,18 @@
     margin-top: 0.4rem;
   }
   .map-location-link:hover { color: var(--gold); }
+  .directions-btn {
+    display: inline-block;
+    margin: 0.5rem 0 0.75rem;
+    padding: 0.45rem 1rem;
+    background: var(--ale);
+    color: #fff;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+  }
+  .directions-btn:hover { background: var(--gold); color: var(--black); }
 
   /* ── LIGHTBOX ── */
   #lightbox {
@@ -1026,81 +1038,105 @@ function mapsUrl(location) {
 }
 
 let leafletMap = null;
+let geocodedCache = null; // [{item, lat, lng}] — built once, reused on tab revisit
 
 async function initMap() {
   const withLocation = agendaItems.filter(i => i.location);
 
-  // Initialise map once
   if (!leafletMap) {
     leafletMap = L.map('leaflet-map').setView([53.9590, -1.0815], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(leafletMap);
   } else {
-    // Clear existing markers
     leafletMap.eachLayer(l => { if (l instanceof L.Marker) leafletMap.removeLayer(l); });
   }
 
-  // Render location list
-  const el = document.getElementById('map-locations');
-  if (withLocation.length) {
-    el.innerHTML = `
-      <div style="font-size:0.75rem;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;">Activity Locations</div>
-      ${withLocation.map(i => `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0;border-top:1px solid var(--border);">
-          <div>
-            <div style="font-size:0.9rem;font-weight:500;">${escHtml(i.title)}</div>
-            <div style="font-size:0.78rem;color:var(--muted);">${escHtml(i.day)}</div>
-          </div>
-          <a class="map-location-link" href="${mapsUrl(i.location)}" target="_blank">📍 Open</a>
-        </div>`).join('')}`;
+  // Invalidate cache when agenda data changes (different item count)
+  if (geocodedCache && geocodedCache.length !== withLocation.length) geocodedCache = null;
+
+  if (!geocodedCache) {
+    geocodedCache = [];
+    for (let i = 0; i < withLocation.length; i++) {
+      const item = withLocation[i];
+      if (i > 0) await new Promise(r => setTimeout(r, 1100));
+      try {
+        const query = item.location.startsWith('http') ? item.title + ', York' : item.location;
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`, {
+          headers: { 'Accept-Language': 'en' }
+        });
+        const data = await res.json();
+        if (data.length) {
+          geocodedCache.push({ item, lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+        }
+      } catch(e) { console.warn('Geocode failed for', item.title); }
+    }
   }
 
-  // Geocode each location and add marker — throttled to respect Nominatim rate limit
   const bounds = [];
-  for (let i = 0; i < withLocation.length; i++) {
-    const item = withLocation[i];
-    if (i > 0) await new Promise(r => setTimeout(r, 1100)); // Nominatim: max 1 req/sec
-    try {
-      const query = item.location.startsWith('http') ? item.title + ', York' : item.location;
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`, {
-        headers: { 'Accept-Language': 'en' }
-      });
-      const data = await res.json();
-      if (data.length) {
-        const lat = parseFloat(data[0].lat);
-        const lng = parseFloat(data[0].lon);
-        L.marker([lat, lng])
-          .addTo(leafletMap)
-          .bindPopup(`<strong>${item.title}</strong><br>${item.day}${item.time ? ' · ' + formatAgendaTime(item.time) : ''}`);
-        bounds.push([lat, lng]);
-      }
-    } catch(e) { console.warn('Geocode failed for', item.title); }
-  }
+  geocodedCache.forEach(({ item, lat, lng }) => {
+    L.marker([lat, lng])
+      .addTo(leafletMap)
+      .bindPopup(`<strong>${item.title}</strong><br>${item.day}${item.time ? ' · ' + formatAgendaTime(item.time) : ''}`);
+    bounds.push([lat, lng]);
+  });
 
   if (bounds.length > 1) leafletMap.fitBounds(bounds, { padding: [30, 30] });
   else if (bounds.length === 1) leafletMap.setView(bounds[0], 15);
 
-  // Force Leaflet to recalculate size after tab becomes visible
   setTimeout(() => leafletMap.invalidateSize(), 100);
+  renderMapDays();
 }
 
-function renderMapLocations() {
-  // Called after agenda renders — just updates the list, map is initialised on tab open
+function renderMapDays() {
   const el = document.getElementById('map-locations');
   if (!el) return;
   const withLocation = agendaItems.filter(i => i.location);
-  if (!withLocation.length) { el.innerHTML = ''; return; }
-  el.innerHTML = `
-    <div style="font-size:0.75rem;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;">Activity Locations</div>
-    ${withLocation.map(i => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0;border-top:1px solid var(--border);">
-        <div>
-          <div style="font-size:0.9rem;font-weight:500;">${escHtml(i.title)}</div>
-          <div style="font-size:0.78rem;color:var(--muted);">${escHtml(i.day)}</div>
-        </div>
-        <a class="map-location-link" href="${mapsUrl(i.location)}" target="_blank">📍 Open</a>
-      </div>`).join('')}`;
+  if (!withLocation.length) { el.innerHTML = '<p class="loading-msg">No locations added yet.</p>'; return; }
+
+  const days = ['Friday','Saturday','Sunday','Monday'];
+  let html = '';
+  days.forEach(day => {
+    const items = withLocation.filter(i => i.day === day);
+    if (!items.length) return;
+    const dayId = 'mapday-' + day.toLowerCase();
+
+    // Build Google Maps directions URL for this day's venues in time order
+    let directionsBtn = '';
+    if (items.length >= 2) {
+      const venues = items.map(i => encodeURIComponent(i.location.startsWith('http') ? i.title + ', York' : i.location));
+      const directionsUrl = 'https://www.google.com/maps/dir/' + venues.join('/');
+      directionsBtn = `<a class="directions-btn" href="${directionsUrl}" target="_blank">🗺 Directions for ${day}</a>`;
+    }
+
+    html += `
+      <div class="day-header" id="maphdr-${dayId}" onclick="toggleMapDay('${dayId}')">
+        ${day} <span class="day-chevron">▼</span>
+      </div>
+      <div class="day-items" id="${dayId}">
+        ${directionsBtn}
+        ${items.map(i => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0;border-top:1px solid var(--border);">
+            <div>
+              <div style="font-size:0.9rem;font-weight:500;">${escHtml(i.title)}</div>
+              ${i.time ? `<div style="font-size:0.78rem;color:var(--muted);font-family:'DM Mono',monospace;">${formatAgendaTime(i.time)}</div>` : ''}
+            </div>
+            <a class="map-location-link" href="${mapsUrl(i.location)}" target="_blank">📍 Open</a>
+          </div>`).join('')}
+      </div>`;
+  });
+  el.innerHTML = html || '<p class="loading-msg">No locations added yet.</p>';
+}
+
+function toggleMapDay(dayId) {
+  const items = document.getElementById(dayId);
+  const hdr   = document.getElementById('maphdr-' + dayId);
+  items.classList.toggle('collapsed');
+  hdr.classList.toggle('collapsed');
+}
+
+function renderMapLocations() {
+  renderMapDays();
 }
 
 function formatAgendaTime(val) {
