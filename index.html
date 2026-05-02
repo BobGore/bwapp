@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B Weekend · York 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F5F0E8;
+    --dark: #1A1409;
+    --gold: #C9A84C;
+    --gold-light: #E8D5A3;
+    --ale: #8B4513;
+    --ale-light: #C4783A;
+    --mist: #6B7280;
+    --white: #FDFAF4;
+    --card: #FFFEF9;
+    --border: #E2D9C5;
+    --red: #9B2335;
+    --green: #2D6A4F;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--dark);
+    min-height: 100vh;
+  }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--dark);
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(201,168,76,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(139,69,19,0.15) 0%, transparent 50%);
+    padding: 2rem;
+  }
+
+  .login-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3rem 2.5rem;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+  }
+
+  .login-crest {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .login-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--dark);
+    margin-bottom: 0.25rem;
+  }
+
+  .login-subtitle {
+    font-size: 0.8rem;
+    color: var(--mist);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+
+  .login-box label {
+    display: block;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mist);
+    margin-bottom: 0.4rem;
+  }
+
+  .login-box select,
+  .login-box input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--dark);
+    margin-bottom: 1.2rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .login-box select:focus,
+  .login-box input:focus { border-color: var(--gold); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 0.85rem;
+    background: var(--gold);
+    color: var(--dark);
+    border: none;
+    border-radius: 3px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 0.95rem;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .btn-primary:hover { background: var(--gold-light); }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .login-error {
+    color: var(--red);
+    font-size: 0.85rem;
+    margin-top: 0.75rem;
+    display: none;
+  }
+
+  /* ── APP SHELL ── */
+  #app { display: none; }
+
+  header {
+    background: var(--dark);
+    color: var(--cream);
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 2px solid var(--gold);
+  }
+
+  .header-brand {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--gold);
+  }
+
+  .header-user {
+    font-size: 0.8rem;
+    color: var(--gold-light);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .btn-logout {
+    background: none;
+    border: 1px solid var(--mist);
+    color: var(--mist);
+    padding: 0.3rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-logout:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ── NAV TABS ── */
+  .nav-tabs {
+    display: flex;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav-tab {
+    padding: 0.85rem 1.25rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mist);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .nav-tab.active {
+    color: var(--dark);
+    border-bottom-color: var(--gold);
+  }
+
+  /* ── MAIN CONTENT ── */
+  main { padding: 1.5rem; max-width: 700px; margin: 0 auto; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .agenda-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--gold);
+    background: rgba(201,168,76,0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .agenda-day-header {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--ale);
+    margin: 1.5rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-title {
+    font-weight: 500;
+    font-size: 1rem;
+    color: var(--dark);
+    flex: 1;
+  }
+
+  .card-desc {
+    font-size: 0.875rem;
+    color: var(--mist);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+
+  /* ── COMMENTS ── */
+  .comments-section { border-top: 1px solid var(--border); padding-top: 0.75rem; }
+
+  .comments-toggle {
+    font-size: 0.8rem;
+    color: var(--gold);
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    padding: 0;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .comments-toggle:hover { color: var(--ale); }
+
+  .comments-list { margin-top: 0.75rem; display: none; }
+  .comments-list.open { display: block; }
+
+  .comment-item {
+    padding: 0.6rem 0.75rem;
+    background: var(--cream);
+    border-radius: 3px;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .comment-author {
+    font-weight: 500;
+    color: var(--ale);
+    font-size: 0.75rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .comment-text { color: var(--dark); line-height: 1.4; }
+
+  .comment-input-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .comment-input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    background: var(--white);
+    outline: none;
+  }
+
+  .comment-input:focus { border-color: var(--gold); }
+
+  .btn-small {
+    padding: 0.5rem 1rem;
+    background: var(--gold);
+    color: var(--dark);
+    border: none;
+    border-radius: 3px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+
+  .btn-small:hover { background: var(--gold-light); }
+
+  /* ── CHAT ── */
+  .chat-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    background: var(--cream);
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  .chat-message {
+    display: flex;
+    flex-direction: column;
+    max-width: 85%;
+  }
+
+  .chat-message.mine { align-self: flex-end; align-items: flex-end; }
+  .chat-message.theirs { align-self: flex-start; }
+
+  .chat-bubble {
+    padding: 0.6rem 0.9rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .chat-message.mine .chat-bubble {
+    background: var(--gold);
+    color: var(--dark);
+    border-bottom-right-radius: 3px;
+  }
+
+  .chat-message.theirs .chat-bubble {
+    background: var(--card);
+    color: var(--dark);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 3px;
+  }
+
+  .chat-meta {
+    font-size: 0.7rem;
+    color: var(--mist);
+    margin-top: 0.2rem;
+    padding: 0 0.3rem;
+  }
+
+  .chat-input-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .chat-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    background: var(--white);
+    outline: none;
+  }
+
+  .chat-input:focus { border-color: var(--gold); }
+
+  /* ── IDEAS ── */
+  .idea-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 0.6rem;
+  }
+
+  .idea-text { flex: 1; font-size: 0.9rem; }
+  .idea-author { font-size: 0.75rem; color: var(--mist); margin-top: 0.2rem; }
+
+  .vote-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.4rem 0.6rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    min-width: 44px;
+  }
+
+  .vote-btn:hover { border-color: var(--gold); }
+  .vote-btn.voted-up { background: rgba(45,106,79,0.1); border-color: var(--green); }
+  .vote-btn.voted-down { background: rgba(155,35,53,0.1); border-color: var(--red); }
+
+  .vote-count { font-size: 0.8rem; font-weight: 500; }
+  .vote-icon { font-size: 1rem; }
+
+  .idea-add-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .idea-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    background: var(--white);
+    outline: none;
+  }
+
+  .idea-input:focus { border-color: var(--gold); }
+
+  /* ── PHOTOS ── */
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .photo-item {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    position: relative;
+    cursor: pointer;
+  }
+
+  .photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+  }
+
+  .photo-item:hover img { transform: scale(1.05); }
+
+  .photo-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(26,20,9,0.8));
+    color: var(--cream);
+    font-size: 0.7rem;
+    padding: 0.5rem 0.4rem 0.3rem;
+  }
+
+  .photo-upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 4px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    margin-bottom: 1rem;
+  }
+
+  .photo-upload-area:hover {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.05);
+  }
+
+  .upload-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .upload-label { font-size: 0.85rem; color: var(--mist); }
+
+  #photo-file-input { display: none; }
+
+  /* ── ADMIN ── */
+  .admin-notice {
+    background: rgba(201,168,76,0.1);
+    border: 1px solid var(--gold);
+    border-radius: 3px;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    color: var(--ale);
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group { margin-bottom: 1rem; }
+  .form-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mist);
+    margin-bottom: 0.4rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    background: var(--white);
+    outline: none;
+    color: var(--dark);
+  }
+
+  .form-group textarea { height: 80px; resize: vertical; }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus { border-color: var(--gold); }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    color: var(--dark);
+    margin-bottom: 1.25rem;
+  }
+
+  .loading-msg {
+    text-align: center;
+    color: var(--mist);
+    font-size: 0.875rem;
+    padding: 2rem;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--dark);
+    color: var(--gold);
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    z-index: 999;
+    transition: transform 0.3s;
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── LIGHTBOX ── */
+  .lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,20,9,0.92);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 100%; max-height: 90vh; border-radius: 3px; }
+  .lightbox-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: var(--cream);
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
+  /* ── PIN ── */
+  .pin-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    opacity: 0.4;
+    transition: opacity 0.2s, background 0.2s;
+    line-height: 1;
+  }
+  .pin-btn:hover { opacity: 1; background: rgba(201,168,76,0.15); }
+  .pin-btn.pinned { opacity: 1; }
+
+  .photo-pin-btn {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    background: rgba(26,20,9,0.6);
+    border: none;
+    border-radius: 3px;
+    color: var(--cream);
+    font-size: 0.9rem;
+    padding: 0.2rem 0.35rem;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    line-height: 1;
+  }
+  .photo-pin-btn:hover, .photo-pin-btn.pinned { opacity: 1; }
+  .photo-pin-btn.pinned { background: rgba(201,168,76,0.85); color: var(--dark); }
+
+  @media (max-width: 480px) {
+    main { padding: 1rem; }
+    .login-box { padding: 2rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-crest">🍺</div>
+    <h1 class="login-title">B Weekend</h1>
+    <p class="login-subtitle">York · 2026</p>
+    <label>Who are you?</label>
+    <select id="login-name">
+      <option value="">— Select your name —</option>
+    </select>
+    <label>Password</label>
+    <input type="password" id="login-password" placeholder="Your password" autocomplete="current-password">
+    <button class="btn-primary" onclick="doLogin()">Enter</button>
+    <div class="login-error" id="login-error">Wrong password — try again</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <span class="header-brand">B Weekend · York</span>
+    <div class="header-user">
+      <span id="header-username"></span>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    </div>
+  </header>
+
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showSection('agenda', this)">📅 Agenda</button>
+    <button class="nav-tab" onclick="showSection('chat', this)">💬 Banter</button>
+    <button class="nav-tab" onclick="showSection('ideas', this)">💡 Ideas</button>
+    <button class="nav-tab" onclick="showSection('photos', this)">📷 Photos</button>
+    <button class="nav-tab" id="admin-tab" style="display:none" onclick="showSection('admin', this)">⚙️ Admin</button>
+  </div>
+
+  <main>
+    <!-- AGENDA -->
+    <div class="section active" id="section-agenda">
+      <div id="agenda-content" class="loading-msg"><span class="spinner"></span> Loading agenda…</div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="section" id="section-chat">
+      <h2 class="section-title">General Banter</h2>
+      <div class="chat-feed" id="chat-feed">
+        <div class="loading-msg"><span class="spinner"></span> Loading…</div>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input" placeholder="Say something…" onkeydown="if(event.key==='Enter') sendChat()">
+        <button class="btn-small" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+
+    <!-- IDEAS -->
+    <div class="section" id="section-ideas">
+      <h2 class="section-title">Ideas & Suggestions</h2>
+      <p style="font-size:0.85rem;color:var(--mist);margin-bottom:1rem;">Things not on the agenda — suggest away and vote on what others fancy.</p>
+      <div id="ideas-list" class="loading-msg"><span class="spinner"></span> Loading…</div>
+      <div class="idea-add-row">
+        <input class="idea-input" id="idea-input" placeholder="Suggest something…" onkeydown="if(event.key==='Enter') submitIdea()">
+        <button class="btn-small" onclick="submitIdea()">Add</button>
+      </div>
+    </div>
+
+    <!-- PHOTOS -->
+    <div class="section" id="section-photos">
+      <h2 class="section-title">Photos</h2>
+      <div class="photo-upload-area" onclick="document.getElementById('photo-file-input').click()">
+        <div class="upload-icon">📷</div>
+        <div class="upload-label">Tap to upload a photo</div>
+      </div>
+      <input type="file" id="photo-file-input" accept="image/*" onchange="uploadPhoto(this)">
+      <div id="photo-grid" class="photo-grid"></div>
+    </div>
+
+    <!-- ADMIN -->
+    <div class="section" id="section-admin">
+      <h2 class="section-title">Admin</h2>
+      <div class="admin-notice">👑 Bob only — add or edit agenda items below. Changes sync to Google Sheets.</div>
+      <div class="card">
+        <h3 style="font-size:0.9rem;font-weight:500;margin-bottom:1rem;color:var(--mist);text-transform:uppercase;letter-spacing:0.06em;">Add Agenda Item</h3>
+        <div class="form-group">
+          <label>Day</label>
+          <select id="admin-day">
+            <option>Friday</option>
+            <option>Saturday</option>
+            <option>Sunday</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Time (e.g. 19:00)</label>
+          <input type="text" id="admin-time" placeholder="19:00">
+        </div>
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="admin-title" placeholder="e.g. Brew York tour">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="admin-desc" placeholder="A short description…"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Emoji (optional)</label>
+          <input type="text" id="admin-emoji" placeholder="🍺">
+        </div>
+        <button class="btn-primary" style="width:auto;padding:0.7rem 2rem;" onclick="addAgendaItem()">Add to Agenda</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  CONFIG — fill these in after Google setup
+// ══════════════════════════════════════════════
+const CONFIG = {
+  SHEET_ID: 'https://docs.google.com/spreadsheets/d/1l_3_hxpycEZnAcdyY4NXbNS36dHQl1zpyTosouAIIW4/edit',
+  API_KEY:  'YOUR_GOOGLE_API_KEY',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwB08hw4DqHoM3HOgYjB43th7SZ6Cw5n3uvv34xfQzUgnYBWUw3BOSQsP6dBA1wT_n-/exec',  // for writes
+  DRIVE_FOLDER_ID: 'https://drive.google.com/drive/folders/1FCRR1OV-OLM0q8EGfhxvJq7ic0cIRQ6K',       // for photos
+};
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let currentUser = null;
+let users = [];       // loaded from Sheets: [{name, hash}]
+let agendaItems = []; // loaded from Sheets
+let chatMessages = [];
+let ideas = [];
+let photos = [];
+let pinnedIds = new Set(); // IDs of pinned comments/photos
+
+// ══════════════════════════════════════════════
+//  CRYPTO — SHA-256 password hashing
+// ══════════════════════════════════════════════
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ══════════════════════════════════════════════
+//  SHEETS HELPERS
+// ══════════════════════════════════════════════
+async function sheetsGet(range) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodeURIComponent(range)}?key=${CONFIG.API_KEY}`;
+  const r = await fetch(url);
+  const d = await r.json();
+  return d.values || [];
+}
+
+async function scriptPost(action, payload) {
+  const r = await fetch(CONFIG.SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...payload })
+  });
+  return r.json();
+}
+
+// ══════════════════════════════════════════════
+//  INIT — load users for login dropdown
+// ══════════════════════════════════════════════
+async function init() {
+  try {
+    const rows = await sheetsGet('Users!A2:B20');
+    users = rows.map(r => ({ name: r[0], hash: r[1] }));
+    const sel = document.getElementById('login-name');
+    users.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.name;
+      opt.textContent = u.name;
+      sel.appendChild(opt);
+    });
+  } catch(e) {
+    console.error('Could not load users', e);
+  }
+}
+
+// ══════════════════════════════════════════════
+//  LOGIN / LOGOUT
+// ══════════════════════════════════════════════
+async function doLogin() {
+  const name = document.getElementById('login-name').value;
+  const pass = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  if (!name) { errEl.textContent = 'Please select your name'; errEl.style.display = 'block'; return; }
+  const user = users.find(u => u.name === name);
+  if (!user) { errEl.textContent = 'User not found'; errEl.style.display = 'block'; return; }
+  const hash = await sha256(pass);
+  if (hash !== user.hash) { errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+  currentUser = name;
+  sessionStorage.setItem('byork_user', name);
+  showApp();
+}
+
+function doLogout() {
+  currentUser = null;
+  sessionStorage.removeItem('byork_user');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('header-username').textContent = currentUser;
+  if (currentUser === 'Bob') {
+    document.getElementById('admin-tab').style.display = 'inline-block';
+  }
+  loadAgenda();
+  loadChat();
+  loadIdeas();
+  loadPhotos();
+  loadPins();
+}
+
+// ══════════════════════════════════════════════
+//  NAV
+// ══════════════════════════════════════════════
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'chat') scrollChatToBottom();
+}
+
+// ══════════════════════════════════════════════
+//  AGENDA
+// ══════════════════════════════════════════════
+async function loadAgenda() {
+  try {
+    const rows = await sheetsGet('Agenda!A2:F100');
+    agendaItems = rows.map(r => ({
+      id: r[0], day: r[1], time: r[2], title: r[3], desc: r[4] || '', emoji: r[5] || '📌'
+    }));
+    renderAgenda();
+    loadAllComments();
+  } catch(e) {
+    document.getElementById('agenda-content').innerHTML = '<p style="color:var(--red);padding:1rem;">Could not load agenda. Check config.</p>';
+  }
+}
+
+function renderAgenda() {
+  const el = document.getElementById('agenda-content');
+  if (!agendaItems.length) { el.innerHTML = '<p class="loading-msg">No agenda items yet.</p>'; return; }
+  const days = ['Friday','Saturday','Sunday'];
+  let html = '';
+  days.forEach(day => {
+    const items = agendaItems.filter(i => i.day === day);
+    if (!items.length) return;
+    html += `<div class="agenda-day-header">${day}</div>`;
+    items.forEach(item => {
+      html += `
+        <div class="card" id="card-${item.id}">
+          <div class="card-header">
+            ${item.time ? `<span class="agenda-time">${item.time}</span>` : ''}
+            <div>
+              <div class="card-title">${item.emoji} ${item.title}</div>
+            </div>
+          </div>
+          ${item.desc ? `<div class="card-desc">${item.desc}</div>` : ''}
+          <div class="comments-section">
+            <button class="comments-toggle" onclick="toggleComments('${item.id}')">
+              <span id="comment-count-${item.id}">💬 Comments</span>
+            </button>
+            <div class="comments-list" id="comments-${item.id}">
+              <div id="comments-inner-${item.id}"></div>
+              <div class="comment-input-row">
+                <input class="comment-input" id="comment-input-${item.id}" placeholder="Add a comment…" onkeydown="if(event.key==='Enter') submitComment('${item.id}')">
+                <button class="btn-small" onclick="submitComment('${item.id}')">Post</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    });
+  });
+  el.innerHTML = html;
+}
+
+async function loadAllComments() {
+  try {
+    const rows = await sheetsGet('Comments!A2:D1000');
+    const byItem = {};
+    rows.forEach(r => {
+      const [itemId, author, text, ts] = r;
+      if (!byItem[itemId]) byItem[itemId] = [];
+      byItem[itemId].push({ author, text, ts });
+    });
+    Object.keys(byItem).forEach(id => renderComments(id, byItem[id]));
+  } catch(e) { console.error('Comments load error', e); }
+}
+
+function renderComments(itemId, comments) {
+  const el = document.getElementById('comments-inner-' + itemId);
+  if (!el) return;
+  const countEl = document.getElementById('comment-count-' + itemId);
+  if (countEl) countEl.textContent = `💬 ${comments.length} comment${comments.length !== 1 ? 's' : ''}`;
+  el.innerHTML = comments.map((c, i) => {
+    const cid = `comment-${itemId}-${i}`;
+    const isPinned = pinnedIds.has(cid);
+    return `
+    <div class="comment-item" style="display:flex;align-items:flex-start;gap:0.5rem;">
+      <div style="flex:1">
+        <div class="comment-author">${c.author}</div>
+        <div class="comment-text">${escHtml(c.text)}</div>
+      </div>
+      <button class="pin-btn ${isPinned ? 'pinned' : ''}" title="${isPinned ? 'Unpin' : 'Pin for Trello'}"
+        onclick="togglePin('${cid}', 'comment', ${JSON.stringify(escHtml(c.author + ': ' + c.text))}, '${itemId}')">
+        ${isPinned ? '📌' : '📍'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function toggleComments(itemId) {
+  const list = document.getElementById('comments-' + itemId);
+  list.classList.toggle('open');
+}
+
+async function submitComment(itemId) {
+  const input = document.getElementById('comment-input-' + itemId);
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  try {
+    await scriptPost('addComment', { itemId, author: currentUser, text });
+    const rows = await sheetsGet('Comments!A2:D1000');
+    const comments = rows.filter(r => r[0] === itemId).map(r => ({ author: r[1], text: r[2], ts: r[3] }));
+    renderComments(itemId, comments);
+    showToast('Comment posted!');
+  } catch(e) { showToast('Could not post comment'); }
+}
+
+// ══════════════════════════════════════════════
+//  CHAT
+// ══════════════════════════════════════════════
+async function loadChat() {
+  try {
+    const rows = await sheetsGet('Chat!A2:C500');
+    chatMessages = rows.map(r => ({ author: r[0], text: r[1], ts: r[2] }));
+    renderChat();
+  } catch(e) { document.getElementById('chat-feed').innerHTML = '<p style="color:var(--red);padding:1rem;">Could not load chat.</p>'; }
+}
+
+function renderChat() {
+  const feed = document.getElementById('chat-feed');
+  if (!chatMessages.length) { feed.innerHTML = '<p class="loading-msg">No messages yet — get the banter started!</p>'; return; }
+  feed.innerHTML = chatMessages.map(m => `
+    <div class="chat-message ${m.author === currentUser ? 'mine' : 'theirs'}">
+      <div class="chat-bubble">${escHtml(m.text)}</div>
+      <div class="chat-meta">${m.author === currentUser ? '' : m.author + ' · '}${formatTs(m.ts)}</div>
+    </div>`).join('');
+  scrollChatToBottom();
+}
+
+function scrollChatToBottom() {
+  const feed = document.getElementById('chat-feed');
+  feed.scrollTop = feed.scrollHeight;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  try {
+    await scriptPost('addChat', { author: currentUser, text });
+    await loadChat();
+  } catch(e) { showToast('Could not send message'); }
+}
+
+// ══════════════════════════════════════════════
+//  IDEAS
+// ══════════════════════════════════════════════
+async function loadIdeas() {
+  try {
+    const rows = await sheetsGet('Ideas!A2:E200');
+    ideas = rows.map(r => ({ id: r[0], author: r[1], text: r[2], ups: parseInt(r[3]||0), downs: parseInt(r[4]||0) }));
+    renderIdeas();
+  } catch(e) { document.getElementById('ideas-list').innerHTML = '<p style="color:var(--red);">Could not load ideas.</p>'; }
+}
+
+function renderIdeas() {
+  const el = document.getElementById('ideas-list');
+  if (!ideas.length) { el.innerHTML = '<p class="loading-msg">No ideas yet — be first!</p>'; return; }
+  el.innerHTML = ideas.map(idea => `
+    <div class="idea-item">
+      <div style="flex:1">
+        <div class="idea-text">${escHtml(idea.text)}</div>
+        <div class="idea-author">— ${idea.author}</div>
+      </div>
+      <button class="vote-btn" onclick="vote('${idea.id}', 'up')">
+        <span class="vote-icon">👍</span>
+        <span class="vote-count">${idea.ups}</span>
+      </button>
+      <button class="vote-btn" onclick="vote('${idea.id}', 'down')">
+        <span class="vote-icon">👎</span>
+        <span class="vote-count">${idea.downs}</span>
+      </button>
+    </div>`).join('');
+}
+
+async function submitIdea() {
+  const input = document.getElementById('idea-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  try {
+    await scriptPost('addIdea', { author: currentUser, text });
+    await loadIdeas();
+    showToast('Idea added!');
+  } catch(e) { showToast('Could not add idea'); }
+}
+
+async function vote(ideaId, direction) {
+  try {
+    await scriptPost('vote', { ideaId, direction, voter: currentUser });
+    await loadIdeas();
+  } catch(e) { showToast('Vote failed'); }
+}
+
+// ══════════════════════════════════════════════
+//  PHOTOS
+// ══════════════════════════════════════════════
+async function loadPhotos() {
+  try {
+    const rows = await sheetsGet('Photos!A2:D500');
+    photos = rows.map(r => ({ id: r[0], uploader: r[1], caption: r[2], driveUrl: r[3] }));
+    renderPhotos();
+  } catch(e) { console.error('Photos load error', e); }
+}
+
+function renderPhotos() {
+  const grid = document.getElementById('photo-grid');
+  if (!photos.length) { grid.innerHTML = '<p class="loading-msg">No photos yet — be the first to upload!</p>'; return; }
+  grid.innerHTML = photos.map(p => {
+    const isPinned = pinnedIds.has(p.id);
+    return `
+    <div class="photo-item">
+      <img src="${p.driveUrl}" alt="${p.caption}" loading="lazy" onclick="openLightbox('${p.driveUrl}')">
+      <div class="photo-caption">${escHtml(p.caption || p.uploader)}</div>
+      <button class="photo-pin-btn ${isPinned ? 'pinned' : ''}" title="${isPinned ? 'Unpin' : 'Pin for Trello'}"
+        onclick="event.stopPropagation(); togglePin('${p.id}', 'photo', ${JSON.stringify(escHtml(p.caption || p.uploader))}, '', '${p.driveUrl}')">
+        ${isPinned ? '📌' : '📍'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function uploadPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  showToast('Uploading photo…');
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const base64 = e.target.result.split(',')[1];
+      const caption = prompt('Caption for this photo? (optional)') || '';
+      await scriptPost('uploadPhoto', {
+        uploader: currentUser,
+        filename: file.name,
+        mimeType: file.type,
+        base64,
+        caption
+      });
+      await loadPhotos();
+      showToast('Photo uploaded! 📷');
+    } catch(err) { showToast('Upload failed'); }
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function openLightbox(url) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.add('open');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+// ══════════════════════════════════════════════
+//  ADMIN
+// ══════════════════════════════════════════════
+async function addAgendaItem() {
+  const day   = document.getElementById('admin-day').value;
+  const time  = document.getElementById('admin-time').value.trim();
+  const title = document.getElementById('admin-title').value.trim();
+  const desc  = document.getElementById('admin-desc').value.trim();
+  const emoji = document.getElementById('admin-emoji').value.trim() || '📌';
+  if (!title) { showToast('Title required'); return; }
+  try {
+    await scriptPost('addAgendaItem', { day, time, title, desc, emoji });
+    await loadAgenda();
+    document.getElementById('admin-title').value = '';
+    document.getElementById('admin-desc').value = '';
+    document.getElementById('admin-time').value = '';
+    document.getElementById('admin-emoji').value = '';
+    showToast('Agenda item added!');
+  } catch(e) { showToast('Could not add item'); }
+}
+
+// ══════════════════════════════════════════════
+//  PINNING
+// ══════════════════════════════════════════════
+async function loadPins() {
+  try {
+    const rows = await sheetsGet('Pinned!A2:F500');
+    pinnedIds = new Set(rows.map(r => r[0]));
+  } catch(e) { console.error('Pins load error', e); }
+}
+
+async function togglePin(id, type, text, itemId, url) {
+  const wasPinned = pinnedIds.has(id);
+  if (wasPinned) {
+    pinnedIds.delete(id);
+    try {
+      await scriptPost('unpin', { id });
+      showToast('Unpinned');
+    } catch(e) { pinnedIds.add(id); showToast('Could not unpin'); return; }
+  } else {
+    pinnedIds.add(id);
+    try {
+      await scriptPost('pin', { id, type, text, itemId: itemId || '', url: url || '', pinnedBy: currentUser });
+      showToast('📌 Pinned for Trello!');
+    } catch(e) { pinnedIds.delete(id); showToast('Could not pin'); return; }
+  }
+  // Refresh affected section
+  if (type === 'photo') { await loadPhotos(); }
+  else { loadAllComments(); }
+}
+
+// ══════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatTs(ts) {
+  if (!ts) return '';
+  try {
+    const d = new Date(ts);
+    return d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  } catch { return ''; }
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ══════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════
+init();
+
+// Resume session if still active
+const saved = sessionStorage.getItem('byork_user');
+if (saved) {
+  currentUser = saved;
+  // Bypass hash check for session resume — user already authenticated
+  showApp();
+}
+</script>
+</body>
+</html>
