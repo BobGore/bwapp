@@ -223,8 +223,17 @@
     border-bottom: 1px solid var(--border);
     padding-bottom: 0.4rem;
     margin: 1.5rem 0 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
   }
   .day-header:first-child { margin-top: 0; }
+  .day-header .day-chevron { transition: transform 0.2s; font-size: 0.7rem; }
+  .day-header.collapsed .day-chevron { transform: rotate(-90deg); }
+  .day-items { }
+  .day-items.collapsed { display: none; }
   .card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -860,7 +869,12 @@ function renderAgenda() {
   days.forEach(day => {
     const items = agendaItems.filter(i => i.day === day);
     if (!items.length) return;
-    html += `<div class="day-header">${day}</div>`;
+    const dayId = 'day-' + day.toLowerCase();
+    html += `
+      <div class="day-header" id="hdr-${dayId}" onclick="toggleDay('${dayId}')">
+        ${day} <span class="day-chevron">▼</span>
+      </div>
+      <div class="day-items" id="${dayId}">`;
     items.forEach(item => {
       const comments = allComments.filter(c => c[0] === item.id);
       html += `
@@ -885,8 +899,16 @@ function renderAgenda() {
           </div>
         </div>`;
     });
+    html += `</div>`;
   });
   el.innerHTML = html || '<p class="loading-msg">Nothing planned yet.</p>';
+}
+
+function toggleDay(dayId) {
+  const items = document.getElementById(dayId);
+  const hdr   = document.getElementById('hdr-' + dayId);
+  items.classList.toggle('collapsed');
+  hdr.classList.toggle('collapsed');
 }
 
 function renderChat() {
