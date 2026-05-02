@@ -894,7 +894,7 @@ function renderAgenda() {
       const comments = allComments.filter(c => c[0] === item.id);
       html += `
         <div class="card">
-          ${item.time ? `<div class="agenda-time">${escHtml(item.time)}</div>` : ''}
+          ${item.time ? `<div class="agenda-time">${escHtml(formatAgendaTime(item.time))}</div>` : ''}
           <div class="agenda-title">${item.emoji ? item.emoji + ' ' : ''}${escHtml(item.title)}</div>
           ${item.desc ? `<div class="agenda-desc">${escHtml(item.desc)}</div>` : ''}
           <button class="comments-toggle" onclick="toggleComments('${item.id}')">
@@ -968,6 +968,18 @@ async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
+function formatAgendaTime(val) {
+  if (!val) return '';
+  const s = String(val);
+  // ISO timestamp from Sheets time cell e.g. "1899-12-30T17:00:00.000Z"
+  if (s.includes('T')) {
+    const d = new Date(s);
+    return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+  }
+  // Already a plain string like "19:00"
+  return s;
+}
+
 function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
