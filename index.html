@@ -1,7 +1,10 @@
 <script>
 /**
- * CLIENT SIDE (JavaScript)
+ * CLIENT SIDE (JavaScript) - GitHub Pages Version
  */
+
+// 1. PASTE YOUR WEB APP URL HERE
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwB08hw4DqHoM3HOgYjB43th7SZ6Cw5n3uvv34xfQzUgnYBWUw3BOSQsP6dBA1wT_n-/exec";
 
 let currentUser = null;
 let users = [];
@@ -12,7 +15,25 @@ let photos = [];
 let pinnedIds = new Set();
 let allComments = [];
 
-// 1. INITIALIZE
+// API BRIDGE: This replaces google.script.run
+async function callGoogle(action, payload = {}) {
+  try {
+    const response = await fetch(WEB_APP_URL, {
+      method: "POST",
+      mode: "no-cors", // Required for some Apps Script configurations
+      body: JSON.stringify({ action, payload })
+    });
+    
+    // Note: 'no-cors' mode results in an opaque response.
+    // For GETTING data, we'll use a standard fetch below.
+    return { success: true };
+  } catch (err) {
+    console.error("API Error:", err);
+    return { success: false };
+  }
+}
+
+// 2. INITIALIZE
 window.onload = function() {
   const saved = sessionStorage.getItem('byork_user');
   if (saved) {
@@ -23,42 +44,45 @@ window.onload = function() {
 };
 
 /**
- * REFRESH: Replaces all the "sheetsGet" calls.
- * Uses google.script.run to talk to Code.gs
+ * REFRESH: Fetches data via standard GET request to your Web App
  */
-function refreshAllData() {
-  google.script.run
-    .withSuccessHandler(function(data) {
-      // Process Users
-      users = data.users.slice(1).map(r => ({ name: r[0], hash: r[1] }));
-      const sel = document.getElementById('login-name');
-      const cur = sel.value;
-      sel.innerHTML = '<option value="">— Select your name —</option>';
-      users.forEach(u => {
-        const opt = document.createElement('option');
-        opt.value = u.name; opt.textContent = u.name;
-        sel.appendChild(opt);
-      });
-      sel.value = cur;
+async function refreshAllData() {
+  try {
+    // We append ?action=getAppData to the URL for a GET request
+    const response = await fetch(`${WEB_APP_URL}?action=getAppData`);
+    const data = await response.json();
 
-      // Map Data Arrays
-      agendaItems = data.agenda.slice(1).map(r => ({ id: r[0], day: r[1], time: r[2], title: r[3], desc: r[4], emoji: r[5] }));
-      chatMessages = data.chat.slice(1).map(r => ({ author: r[0], text: r[1], ts: r[2] }));
-      ideas = data.ideas.slice(1).map(r => ({ id: r[0], author: r[1], text: r[2], ups: r[3]||0, downs: r[4]||0 }));
-      photos = data.photos.slice(1).map(r => ({ id: r[0], uploader: r[1], caption: r[2], driveUrl: r[3] }));
-      pinnedIds = new Set(data.pinned.slice(1).map(r => r[0]));
-      allComments = data.comments.slice(1);
+    // Process Users
+    users = data.users.slice(1).map(r => ({ name: r[0], hash: r[1] }));
+    const sel = document.getElementById('login-name');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— Select your name —</option>';
+    users.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.name; opt.textContent = u.name;
+      sel.appendChild(opt);
+    });
+    sel.value = cur;
 
-      // Trigger UI updates
-      renderAgenda();
-      renderChat();
-      renderIdeas();
-      renderPhotos();
-    })
-    .getAppData();
+    // Map Data Arrays
+    agendaItems = data.agenda.slice(1).map(r => ({ id: r[0], day: r[1], time: r[2], title: r[3], desc: r[4], emoji: r[5] }));
+    chatMessages = data.chat.slice(1).map(r => ({ author: r[0], text: r[1], ts: r[2] }));
+    ideas = data.ideas.slice(1).map(r => ({ id: r[0], author: r[1], text: r[2], ups: r[3]||0, downs: r[4]||0 }));
+    photos = data.photos.slice(1).map(r => ({ id: r[0], uploader: r[1], caption: r[2], driveUrl: r[3] }));
+    pinnedIds = new Set(data.pinned.slice(1).map(r => r[0]));
+    allComments = data.comments.slice(1);
+
+    // Trigger UI updates
+    renderAgenda();
+    renderChat();
+    renderIdeas();
+    renderPhotos();
+  } catch (err) {
+    console.error("Failed to fetch data:", err);
+  }
 }
 
-// 2. AUTHENTICATION
+// 3. AUTHENTICATION
 async function doLogin() {
   const name = document.getElementById('login-name').value;
   const pass = document.getElementById('login-password').value;
@@ -80,30 +104,40 @@ function doLogout() {
   location.reload();
 }
 
-// 3. EVENT HANDLERS (Write Operations)
-function sendChat() {
+// 4. EVENT HANDLERS (Write Operations)
+async function sendChat() {
   const input = document.getElementById('chat-input');
   if (!input.value.trim()) return;
-  google.script.run.withSuccessHandler(refreshAllData).addChat({author: currentUser, text: input.value});
+  const text = input.value;
   input.value = '';
+  
+  await callGoogle("addChat", { author: currentUser, text: text });
+  setTimeout(refreshAllData, 1000); // Wait a second for Google to process then refresh
 }
 
-function submitComment(itemId) {
+async function submitComment(itemId) {
   const input = document.getElementById('comment-input-' + itemId);
   if (!input.value.trim()) return;
-  google.script.run.withSuccessHandler(refreshAllData).addComment({itemId, author: currentUser, text: input.value});
+  const text = input.value;
   input.value = '';
+  
+  await callGoogle("addComment", { itemId, author: currentUser, text: text });
+  setTimeout(refreshAllData, 1000);
 }
 
-function submitIdea() {
+async function submitIdea() {
   const input = document.getElementById('idea-input');
   if (!input.value.trim()) return;
-  google.script.run.withSuccessHandler(refreshAllData).addIdea({author: currentUser, text: input.value});
+  const text = input.value;
   input.value = '';
+
+  await callGoogle("addIdea", { author: currentUser, text: text });
+  setTimeout(refreshAllData, 1000);
 }
 
-function vote(ideaId, direction) {
-  google.script.run.withSuccessHandler(refreshAllData).vote({ideaId, direction});
+async function vote(ideaId, direction) {
+  await callGoogle("vote", { ideaId, direction });
+  setTimeout(refreshAllData, 500);
 }
 
 function uploadPhoto(input) {
@@ -111,20 +145,21 @@ function uploadPhoto(input) {
   if (!file) return;
   showToast('Uploading...');
   const reader = new FileReader();
-  reader.onload = function(e) {
-    google.script.run.withSuccessHandler(() => { showToast('Uploaded!'); refreshAllData(); })
-      .uploadPhoto({
-        uploader: currentUser,
-        filename: file.name,
-        mimeType: file.type,
-        base64: e.target.result.split(',')[1],
-        caption: prompt('Caption?') || ''
-      });
+  reader.onload = async function(e) {
+    await callGoogle("uploadPhoto", {
+      uploader: currentUser,
+      filename: file.name,
+      mimeType: file.type,
+      base64: e.target.result.split(',')[1],
+      caption: prompt('Caption?') || ''
+    });
+    showToast('Uploaded!');
+    setTimeout(refreshAllData, 2000);
   };
   reader.readAsDataURL(file);
 }
 
-function addAgendaItem() {
+async function addAgendaItem() {
   const payload = {
     day: document.getElementById('admin-day').value,
     time: document.getElementById('admin-time').value,
@@ -132,10 +167,12 @@ function addAgendaItem() {
     desc: document.getElementById('admin-desc').value,
     emoji: document.getElementById('admin-emoji').value
   };
-  google.script.run.withSuccessHandler(() => { showToast('Added!'); refreshAllData(); }).addAgendaItem(payload);
+  await callGoogle("addAgendaItem", payload);
+  showToast('Added!');
+  setTimeout(refreshAllData, 1000);
 }
 
-// 4. RENDERING FUNCTIONS
+// 5. RENDERING FUNCTIONS (Kept same as original)
 function renderAgenda() {
   const el = document.getElementById('agenda-content');
   const days = ['Friday','Saturday','Sunday'];
@@ -203,7 +240,7 @@ function renderPhotos() {
     </div>`).join('') || '<p class="loading-msg">No photos yet.</p>';
 }
 
-// 5. UTILS
+// 6. UTILS
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
