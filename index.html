@@ -937,7 +937,8 @@ function escHtml(str) {
 function formatTs(ts) {
   if (!ts) return '';
   const d = new Date(ts);
-  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('en-GB', { weekday: 'long' }) + ' · ' +
+         d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 function toggleComments(id) {
   document.getElementById('comments-' + id).classList.toggle('open');
