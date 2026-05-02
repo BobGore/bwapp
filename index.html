@@ -386,7 +386,19 @@
     transition: border-color 0.2s;
   }
   .photo-item img:hover { border-color: var(--gold); }
-  .photo-caption { font-size: 0.75rem; color: var(--muted); padding: 0.3rem 0; font-style: italic; }
+  .photo-caption { font-size: 0.75rem; color: var(--muted); padding: 0.1rem 0; font-style: italic; }
+  .photo-uploader {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    padding-top: 0.3rem;
+  }
+  .photo-day {
+    font-size: 0.68rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
   .upload-label {
     display: inline-block;
     background: var(--card);
@@ -596,10 +608,19 @@
     <div class="main-wrap">
       <div class="section-title">Photos</div>
       <div class="section-sub">The weekend in pictures</div>
-      <label class="upload-label">
-        + Upload Photo
-        <input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(this)">
-      </label>
+      <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;">
+        <select id="photo-day" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:0.6rem 0.8rem;font-family:'Crimson Text',serif;font-size:0.95rem;outline:none;">
+          <option value="">Day…</option>
+          <option>Friday</option>
+          <option>Saturday</option>
+          <option>Sunday</option>
+          <option>Monday</option>
+        </select>
+        <label class="upload-label" style="margin-bottom:0;">
+          + Upload Photo
+          <input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(this)">
+        </label>
+      </div>
       <div class="photo-grid" id="photo-grid"></div>
     </div>
   </div>
@@ -702,7 +723,7 @@ async function refreshAllData() {
     agendaItems  = data.agenda.slice(1).map(r => ({ id: r[0], day: r[1], time: r[2], title: r[3], desc: r[4], emoji: r[5] }));
     chatMessages = data.chat.slice(1).map(r => ({ author: r[0], text: r[1], ts: r[2] }));
     ideas        = data.ideas.slice(1).map(r => ({ id: r[0], author: r[1], text: r[2], ups: r[3]||0, downs: r[4]||0 }));
-    photos       = data.photos.slice(1).map(r => ({ id: r[0], uploader: r[1], caption: r[2], driveUrl: r[3] }));
+    photos       = data.photos.slice(1).map(r => ({ id: r[0], uploader: r[1], caption: r[2], driveUrl: r[3], day: r[4] || '' }));
     allComments  = data.comments.slice(1);
 
     renderAgenda();
@@ -813,7 +834,8 @@ function uploadPhoto(input) {
       filename: file.name,
       mimeType: file.type,
       base64: e.target.result.split(',')[1],
-      caption: prompt('Caption (optional)?') || ''
+      caption: prompt('Caption (optional)?') || '',
+      day: document.getElementById('photo-day').value
     });
     showToast('Uploaded!');
     setTimeout(refreshAllData, 2500);
@@ -907,7 +929,8 @@ function renderPhotos() {
   document.getElementById('photo-grid').innerHTML = photos.map(p => `
     <div class="photo-item" onclick="openLightbox('${p.driveUrl}')">
       <img src="${p.driveUrl}" alt="${escHtml(p.caption || '')}">
-      <div class="photo-caption">${escHtml(p.caption || p.uploader)}</div>
+      <div class="photo-uploader">${escHtml(p.uploader)}${p.day ? ` <span class="photo-day">· ${escHtml(p.day)}</span>` : ''}</div>
+      ${p.caption ? `<div class="photo-caption">${escHtml(p.caption)}</div>` : ''}
     </div>`).join('') || '<p class="loading-msg">No photos yet.</p>';
 }
 
