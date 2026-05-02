@@ -1,9 +1,9 @@
 <script>
 /**
- * CLIENT SIDE (JavaScript) - GitHub Pages Version
+ * CLIENT SIDE (JavaScript) - GitHub Pages Version (CORS FIX)
  */
 
-// 1. PASTE YOUR WEB APP URL HERE
+// 1. WEB APP URL
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwB08hw4DqHoM3HOgYjB43th7SZ6Cw5n3uvv34xfQzUgnYBWUw3BOSQsP6dBA1wT_n-/exec";
 
 let currentUser = null;
@@ -15,17 +15,19 @@ let photos = [];
 let pinnedIds = new Set();
 let allComments = [];
 
-// API BRIDGE: This replaces google.script.run
+/**
+ * API BRIDGE: Fixed for CORS
+ * We use 'no-cors' which allows the data to be sent even if the browser blocks the response.
+ */
 async function callGoogle(action, payload = {}) {
   try {
-    const response = await fetch(WEB_APP_URL, {
+    await fetch(WEB_APP_URL, {
       method: "POST",
-      mode: "no-cors", // Required for some Apps Script configurations
+      mode: "no-cors", 
+      cache: "no-cache",
+      headers: { "Content-Type": "text/plain" }, // GAS treats text/plain better for no-cors
       body: JSON.stringify({ action, payload })
     });
-    
-    // Note: 'no-cors' mode results in an opaque response.
-    // For GETTING data, we'll use a standard fetch below.
     return { success: true };
   } catch (err) {
     console.error("API Error:", err);
@@ -44,11 +46,12 @@ window.onload = function() {
 };
 
 /**
- * REFRESH: Fetches data via standard GET request to your Web App
+ * REFRESH: Fetches data via standard GET request.
+ * We add the action parameter to the URL to bypass POST pre-flight checks.
  */
 async function refreshAllData() {
   try {
-    // We append ?action=getAppData to the URL for a GET request
+    // Append the action to the URL string to trigger the doGet() in your script
     const response = await fetch(`${WEB_APP_URL}?action=getAppData`);
     const data = await response.json();
 
@@ -82,7 +85,7 @@ async function refreshAllData() {
   }
 }
 
-// 3. AUTHENTICATION
+// 3. AUTHENTICATION (Unchanged)
 async function doLogin() {
   const name = document.getElementById('login-name').value;
   const pass = document.getElementById('login-password').value;
@@ -112,7 +115,7 @@ async function sendChat() {
   input.value = '';
   
   await callGoogle("addChat", { author: currentUser, text: text });
-  setTimeout(refreshAllData, 1000); // Wait a second for Google to process then refresh
+  setTimeout(refreshAllData, 1200); 
 }
 
 async function submitComment(itemId) {
@@ -122,7 +125,7 @@ async function submitComment(itemId) {
   input.value = '';
   
   await callGoogle("addComment", { itemId, author: currentUser, text: text });
-  setTimeout(refreshAllData, 1000);
+  setTimeout(refreshAllData, 1200);
 }
 
 async function submitIdea() {
@@ -132,12 +135,12 @@ async function submitIdea() {
   input.value = '';
 
   await callGoogle("addIdea", { author: currentUser, text: text });
-  setTimeout(refreshAllData, 1000);
+  setTimeout(refreshAllData, 1200);
 }
 
 async function vote(ideaId, direction) {
   await callGoogle("vote", { ideaId, direction });
-  setTimeout(refreshAllData, 500);
+  setTimeout(refreshAllData, 600);
 }
 
 function uploadPhoto(input) {
@@ -154,7 +157,7 @@ function uploadPhoto(input) {
       caption: prompt('Caption?') || ''
     });
     showToast('Uploaded!');
-    setTimeout(refreshAllData, 2000);
+    setTimeout(refreshAllData, 2500);
   };
   reader.readAsDataURL(file);
 }
@@ -169,10 +172,10 @@ async function addAgendaItem() {
   };
   await callGoogle("addAgendaItem", payload);
   showToast('Added!');
-  setTimeout(refreshAllData, 1000);
+  setTimeout(refreshAllData, 1500);
 }
 
-// 5. RENDERING FUNCTIONS (Kept same as original)
+// 5. RENDERING FUNCTIONS (Unchanged)
 function renderAgenda() {
   const el = document.getElementById('agenda-content');
   const days = ['Friday','Saturday','Sunday'];
