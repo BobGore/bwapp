@@ -501,6 +501,26 @@
   }
   .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
 
+  /* ── MAP ── */
+  .map-embed {
+    width: 100%;
+    height: 420px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 1rem;
+  }
+  .map-location-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    color: var(--ale);
+    text-decoration: none;
+    font-weight: 500;
+    margin-top: 0.4rem;
+  }
+  .map-location-link:hover { color: var(--gold); }
+
   /* ── LIGHTBOX ── */
   #lightbox {
     display: none;
@@ -587,6 +607,7 @@
     <a onclick="showView('chat')"   id="nav-chat">Chat</a>
     <a onclick="showView('ideas')"  id="nav-ideas">Ideas</a>
     <a onclick="showView('photos')" id="nav-photos">Photos</a>
+    <a onclick="showView('map')"    id="nav-map">Map</a>
     <a onclick="showView('admin')"  id="nav-admin" style="display:none;">Admin</a>
   </div>
 
@@ -640,6 +661,23 @@
     </div>
   </div>
 
+  <!-- MAP -->
+  <div id="view-map" class="view">
+    <div class="main-wrap">
+      <div class="section-title">York</div>
+      <div class="section-sub">Where we're at</div>
+      <iframe
+        class="map-embed"
+        src="https://www.openstreetmap.org/export/embed.html?bbox=-1.1300%2C53.9480%2C-1.0600%2C53.9700&layer=mapnik&marker=53.9590%2C-1.0815"
+        loading="lazy">
+      </iframe>
+      <p style="font-size:0.75rem;color:var(--muted);">
+        Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" style="color:var(--ale);">OpenStreetMap</a> contributors
+      </p>
+      <div id="map-locations" style="margin-top:1.5rem;"></div>
+    </div>
+  </div>
+
   <!-- ADMIN (Bob only) -->
   <div id="view-admin" class="view">
     <div class="main-wrap">
@@ -671,6 +709,10 @@
         <div class="admin-field">
           <label>Description</label>
           <textarea id="admin-desc" rows="3" placeholder="Details…"></textarea>
+        </div>
+        <div class="admin-field">
+          <label>Location (address or Google Maps link)</label>
+          <input type="text" id="admin-location" placeholder="Brew York, Walmgate, York">
         </div>
         <div style="display:flex;gap:0.5rem;">
           <button class="btn-sm btn-save" onclick="addAgendaItem()">Add Item</button>
@@ -735,7 +777,7 @@ async function refreshAllData() {
     });
     if (cur) sel.value = cur;
 
-    agendaItems  = data.agenda.slice(1).map(r => ({ id: r[0], day: r[1], time: r[2], title: r[3], desc: r[4], emoji: r[5] }));
+    agendaItems  = data.agenda.slice(1).map(r => ({ id: r[0], day: r[1], time: r[2], title: r[3], desc: r[4], emoji: r[5], location: r[6] || '' }));
     chatMessages = data.chat.slice(1).map(r => ({ author: r[0], text: r[1], ts: r[2] }));
     ideas        = data.ideas.slice(1).map(r => ({ id: r[0], author: r[1], text: r[2], ups: r[3]||0, downs: r[4]||0 }));
     photos       = data.photos.slice(1).map(r => ({ id: r[0], uploader: r[1], caption: r[2], driveUrl: r[3], day: r[4] || '' }));
@@ -868,16 +910,17 @@ function uploadPhoto(input) {
 
 async function addAgendaItem() {
   const payload = {
-    day:   document.getElementById('admin-day').value,
-    time:  document.getElementById('admin-time').value.trim(),
-    title: document.getElementById('admin-title').value.trim(),
-    desc:  document.getElementById('admin-desc').value.trim(),
-    emoji: document.getElementById('admin-emoji').value.trim()
+    day:      document.getElementById('admin-day').value,
+    time:     document.getElementById('admin-time').value.trim(),
+    title:    document.getElementById('admin-title').value.trim(),
+    desc:     document.getElementById('admin-desc').value.trim(),
+    emoji:    document.getElementById('admin-emoji').value.trim(),
+    location: document.getElementById('admin-location').value.trim()
   };
   if (!payload.title) { showToast('Title is required'); return; }
   await callGoogle("addAgendaItem", payload);
   showToast('Item added!');
-  ['admin-time','admin-title','admin-desc','admin-emoji'].forEach(id => {
+  ['admin-time','admin-title','admin-desc','admin-emoji','admin-location'].forEach(id => {
     document.getElementById(id).value = '';
   });
   setTimeout(refreshAllData, 1500);
@@ -905,6 +948,7 @@ function renderAgenda() {
           ${item.time ? `<div class="agenda-time">${escHtml(formatAgendaTime(item.time))}</div>` : ''}
           <div class="agenda-title">${item.emoji ? item.emoji + ' ' : ''}${escHtml(item.title)}</div>
           ${item.desc ? `<div class="agenda-desc">${escHtml(item.desc)}</div>` : ''}
+          ${item.location ? `<a class="map-location-link" href="${mapsUrl(item.location)}" target="_blank">📍 View on map</a>` : ''}
           <button class="comments-toggle" onclick="toggleComments('${item.id}')">
             💬 ${comments.length} comment${comments.length !== 1 ? 's' : ''}
           </button>
@@ -925,6 +969,7 @@ function renderAgenda() {
     html += `</div>`;
   });
   el.innerHTML = html || '<p class="loading-msg">Nothing planned yet.</p>';
+  renderMapLocations();
 }
 
 function toggleDay(dayId) {
@@ -976,6 +1021,28 @@ async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
+function mapsUrl(location) {
+  if (location.startsWith('http')) return location;
+  return 'https://www.google.com/maps/search/' + encodeURIComponent(location);
+}
+
+function renderMapLocations() {
+  const el = document.getElementById('map-locations');
+  if (!el) return;
+  const withLocation = agendaItems.filter(i => i.location);
+  if (!withLocation.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div style="font-size:0.75rem;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;">Activity Locations</div>
+    ${withLocation.map(i => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0;border-top:1px solid var(--border);">
+        <div>
+          <div style="font-size:0.9rem;font-weight:500;">${escHtml(i.title)}</div>
+          <div style="font-size:0.78rem;color:var(--muted);">${escHtml(i.day)}</div>
+        </div>
+        <a class="map-location-link" href="${mapsUrl(i.location)}" target="_blank">📍 Map</a>
+      </div>`).join('')}`;
+}
+
 function formatAgendaTime(val) {
   if (!val) return '';
   const s = String(val);
