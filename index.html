@@ -315,7 +315,15 @@
   }
   .chat-message.mine .chat-bubble { background: var(--gold); color: var(--black); }
   .chat-message.theirs .chat-bubble { background: #222; border: 1px solid var(--border); }
-  .chat-meta { font-size: 0.7rem; color: var(--muted); margin-top: 0.2rem; }
+  .chat-author {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    margin-bottom: 0.2rem;
+  }
+  .chat-message.mine .chat-author { text-align: right; color: var(--muted); }
+  .chat-meta { font-size: 0.65rem; color: var(--muted); margin-top: 0.2rem; }
   .chat-input-row { display: flex; gap: 0.5rem; }
   .chat-input-row input {
     flex: 1;
@@ -880,8 +888,9 @@ function renderChat() {
   }
   feed.innerHTML = chatMessages.map(m => `
     <div class="chat-message ${m.author === currentUser ? 'mine' : 'theirs'}">
+      <div class="chat-author">${escHtml(m.author)}</div>
       <div class="chat-bubble">${escHtml(m.text)}</div>
-      <div class="chat-meta">${m.author !== currentUser ? escHtml(m.author) + ' · ' : ''}${formatTs(m.ts)}</div>
+      <div class="chat-meta">${formatTs(m.ts)}</div>
     </div>`).join('');
   feed.scrollTop = feed.scrollHeight;
 }
