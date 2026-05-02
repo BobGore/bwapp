@@ -821,7 +821,15 @@ async function submitComment(itemId) {
   const text = input.value;
   input.value = '';
   await callGoogle("addComment", { itemId, author: currentUser, text });
-  setTimeout(refreshAllData, 1200);
+  showToast('Comment posted!');
+  setTimeout(async () => {
+    const openSections = [...document.querySelectorAll('.comments-list.open')].map(el => el.id);
+    await refreshAllData();
+    openSections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('open');
+    });
+  }, 1200);
 }
 
 async function submitIdea() {
@@ -891,7 +899,7 @@ function renderAgenda() {
       </div>
       <div class="day-items" id="${dayId}">`;
     items.forEach(item => {
-      const comments = allComments.filter(c => c[0] === item.id);
+      const comments = allComments.filter(c => String(c[0]) === String(item.id));
       html += `
         <div class="card">
           ${item.time ? `<div class="agenda-time">${escHtml(formatAgendaTime(item.time))}</div>` : ''}
