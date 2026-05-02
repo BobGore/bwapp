@@ -1,31 +1,674 @@
-<script>
-/**
- * CLIENT SIDE (JavaScript) - GitHub Pages Version (CORS FIX)
- */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BYörk 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #f0d080;
+    --black: #0a0a0a;
+    --card: #1a1a1a;
+    --border: #2a2a2a;
+    --text: #e8e0d0;
+    --muted: #888;
+    --red: #cc2200;
+  }
 
-// 1. WEB APP URL
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'Crimson Text', serif;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(201,168,76,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(201,168,76,0.05) 0%, transparent 60%);
+  }
+
+  /* ── GATE ── */
+  #gate {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+  }
+  .gate-logo { display: inline-flex; gap: 8px; margin-bottom: 1.5rem; }
+  .gate-logo span {
+    display: inline-block;
+    background: var(--text);
+    color: var(--black);
+    font-family: 'Bebas Neue', cursive;
+    font-size: 3rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    line-height: 3.5rem;
+    text-align: center;
+  }
+  .gate-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    margin-bottom: 0.3rem;
+  }
+  .gate-sub {
+    font-size: 1rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 2.5rem;
+    font-style: italic;
+  }
+  .gate-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    max-width: 340px;
+    width: 100%;
+    text-align: left;
+  }
+  .gate-box label {
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+  .gate-box input, .gate-box select {
+    width: 100%;
+    background: var(--black);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.7rem 1rem;
+    font-family: 'Crimson Text', serif;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    outline: none;
+  }
+  .gate-box input:focus, .gate-box select:focus { border-color: var(--gold); }
+  .gate-box select option { background: var(--black); }
+  .gate-error { color: var(--red); font-size: 0.85rem; margin-top: 0.5rem; display: none; }
+  .btn-gold {
+    width: 100%;
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    padding: 0.8rem;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-gold:hover { background: var(--gold-light); }
+
+  /* ── HEADER ── */
+  .site-header {
+    text-align: center;
+    padding: 1.5rem 1rem 1rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .site-logo { display: inline-flex; gap: 6px; margin-bottom: 0.4rem; }
+  .site-logo span {
+    display: inline-block;
+    background: var(--text);
+    color: var(--black);
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.8rem;
+    width: 2.2rem;
+    height: 2.2rem;
+    line-height: 2.2rem;
+    text-align: center;
+  }
+  .site-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.1rem;
+  }
+  .site-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .header-user {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: right;
+    line-height: 1.4;
+  }
+  .header-user span {
+    display: block;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .header-user button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 0.2rem;
+    font-family: 'Bebas Neue', cursive;
+  }
+  .header-user button:hover { color: var(--gold); }
+
+  /* ── NAV ── */
+  .nav-links {
+    display: flex;
+    justify-content: center;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    cursor: pointer;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    padding: 0.75rem 1.2rem;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-links a.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  /* ── VIEWS ── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .main-wrap { max-width: 700px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+  .section-sub {
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    font-style: italic;
+  }
+  .loading-msg { color: var(--muted); font-style: italic; font-size: 0.95rem; padding: 2rem 0; text-align: center; }
+
+  /* ── AGENDA ── */
+  .day-header {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 0.8rem;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.4rem;
+    margin: 1.5rem 0 0.75rem;
+  }
+  .day-header:first-child { margin-top: 0; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .agenda-time {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+  .agenda-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    margin-bottom: 0.2rem;
+  }
+  .agenda-desc {
+    font-size: 0.9rem;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 0.6rem;
+  }
+
+  /* ── COMMENTS ── */
+  .comments-toggle {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'Crimson Text', serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s;
+  }
+  .comments-toggle:hover { color: var(--gold); }
+  .comments-list { display: none; margin-top: 0.75rem; }
+  .comments-list.open { display: block; }
+  .comment-item {
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--border);
+    font-size: 0.9rem;
+  }
+  .comment-author {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    margin-bottom: 0.1rem;
+  }
+  .comment-input-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+  .comment-input-row input {
+    flex: 1;
+    background: var(--black);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.5rem 0.75rem;
+    font-family: 'Crimson Text', serif;
+    font-size: 0.9rem;
+    outline: none;
+  }
+  .comment-input-row input:focus { border-color: var(--gold); }
+
+  /* ── CHAT ── */
+  .chat-feed {
+    height: 400px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .chat-message { display: flex; flex-direction: column; max-width: 75%; }
+  .chat-message.mine { align-self: flex-end; align-items: flex-end; }
+  .chat-message.theirs { align-self: flex-start; align-items: flex-start; }
+  .chat-bubble {
+    padding: 0.6rem 0.9rem;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  .chat-message.mine .chat-bubble { background: var(--gold); color: var(--black); }
+  .chat-message.theirs .chat-bubble { background: #222; border: 1px solid var(--border); }
+  .chat-meta { font-size: 0.7rem; color: var(--muted); margin-top: 0.2rem; }
+  .chat-input-row { display: flex; gap: 0.5rem; }
+  .chat-input-row input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.7rem 1rem;
+    font-family: 'Crimson Text', serif;
+    font-size: 1rem;
+    outline: none;
+  }
+  .chat-input-row input:focus { border-color: var(--gold); }
+
+  /* ── IDEAS ── */
+  .idea-input-row { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+  .idea-input-row input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.7rem 1rem;
+    font-family: 'Crimson Text', serif;
+    font-size: 1rem;
+    outline: none;
+  }
+  .idea-input-row input:focus { border-color: var(--gold); }
+  .idea-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 1rem 1.2rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .idea-text { font-size: 1rem; margin-bottom: 0.2rem; }
+  .idea-author { font-size: 0.75rem; color: var(--muted); font-style: italic; }
+  .vote-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.4rem 0.7rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .vote-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ── PHOTOS ── */
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.75rem;
+  }
+  .photo-item { cursor: pointer; }
+  .photo-item img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+  }
+  .photo-item img:hover { border-color: var(--gold); }
+  .photo-caption { font-size: 0.75rem; color: var(--muted); padding: 0.3rem 0; font-style: italic; }
+  .upload-label {
+    display: inline-block;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.7rem 1.5rem;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 1.5rem;
+  }
+  .upload-label:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ── ADMIN ── */
+  .admin-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .admin-section h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--gold);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .admin-field { margin-bottom: 0.8rem; }
+  .admin-field label {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  .admin-field input, .admin-field select, .admin-field textarea {
+    width: 100%;
+    background: var(--black);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.6rem 0.8rem;
+    font-family: 'Crimson Text', serif;
+    font-size: 0.95rem;
+    outline: none;
+  }
+  .admin-field input:focus, .admin-field select:focus, .admin-field textarea:focus { border-color: var(--gold); }
+  .admin-field select option { background: var(--black); }
+  .admin-field textarea { resize: vertical; min-height: 60px; }
+
+  /* ── BUTTONS ── */
+  .btn-sm {
+    padding: 0.45rem 1rem;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-sm:hover { opacity: 0.8; }
+  .btn-save { background: var(--gold); color: var(--black); }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.45rem 1rem;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ── LIGHTBOX ── */
+  #lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.93);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  #lightbox.open { display: flex; }
+  #lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; }
+  #lightbox-close {
+    position: absolute;
+    top: 1rem; right: 1.5rem;
+    font-size: 2.5rem;
+    color: var(--text);
+    cursor: pointer;
+    background: none;
+    border: none;
+    line-height: 1;
+  }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--gold);
+    color: var(--black);
+    padding: 0.7rem 1.5rem;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    transition: transform 0.3s ease;
+    z-index: 999;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 500px) {
+    .nav-links a { padding: 0.65rem 0.8rem; font-size: 0.78rem; }
+    .photo-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+    .chat-message { max-width: 88%; }
+    .header-user { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ GATE -->
+<div id="gate">
+  <div class="gate-logo">
+    <span>B</span><span>Y</span>
+  </div>
+  <div class="gate-title">The B Weekend</div>
+  <div class="gate-sub">BYörk · 2026</div>
+  <div class="gate-box">
+    <label>Your name</label>
+    <select id="login-name">
+      <option value="">Loading…</option>
+    </select>
+    <label>Password</label>
+    <input type="password" id="login-password" placeholder="Enter your password" autocomplete="off">
+    <button class="btn-gold" onclick="doLogin()">Enter</button>
+    <div class="gate-error" id="login-error">Wrong password — try again.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ APP -->
+<div id="app" style="display:none;">
+
+  <div class="site-header">
+    <div class="site-logo"><span>B</span><span>Y</span></div>
+    <h1>The B Weekend</h1>
+    <h2>BYörk 2026</h2>
+    <div class="header-user">
+      <span id="header-username"></span>
+      <button onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a onclick="showView('agenda')" id="nav-agenda" class="active">Agenda</a>
+    <a onclick="showView('chat')"   id="nav-chat">Chat</a>
+    <a onclick="showView('ideas')"  id="nav-ideas">Ideas</a>
+    <a onclick="showView('photos')" id="nav-photos">Photos</a>
+    <a onclick="showView('admin')"  id="nav-admin" style="display:none;">Admin</a>
+  </div>
+
+  <!-- AGENDA -->
+  <div id="view-agenda" class="view active">
+    <div class="main-wrap">
+      <div class="section-title">The Programme</div>
+      <div class="section-sub">What's on</div>
+      <div id="agenda-content"><p class="loading-msg">Loading…</p></div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div id="view-chat" class="view">
+    <div class="main-wrap">
+      <div class="section-title">Group Chat</div>
+      <div class="section-sub">Keep it clean</div>
+      <div class="chat-feed" id="chat-feed"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Say something…"
+          onkeydown="if(event.key==='Enter') sendChat()">
+        <button class="btn-sm btn-save" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IDEAS -->
+  <div id="view-ideas" class="view">
+    <div class="main-wrap">
+      <div class="section-title">Suggestions</div>
+      <div class="section-sub">Ideas for the weekend</div>
+      <div class="idea-input-row">
+        <input type="text" id="idea-input" placeholder="Suggest something…"
+          onkeydown="if(event.key==='Enter') submitIdea()">
+        <button class="btn-sm btn-save" onclick="submitIdea()">Add</button>
+      </div>
+      <div id="ideas-list"></div>
+    </div>
+  </div>
+
+  <!-- PHOTOS -->
+  <div id="view-photos" class="view">
+    <div class="main-wrap">
+      <div class="section-title">Photos</div>
+      <div class="section-sub">The weekend in pictures</div>
+      <label class="upload-label">
+        + Upload Photo
+        <input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(this)">
+      </label>
+      <div class="photo-grid" id="photo-grid"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN (Bob only) -->
+  <div id="view-admin" class="view">
+    <div class="main-wrap">
+      <div class="section-title">Admin</div>
+      <div class="section-sub">Bob only</div>
+      <div class="admin-section">
+        <h3>Add Agenda Item</h3>
+        <div class="admin-field">
+          <label>Day</label>
+          <select id="admin-day">
+            <option>Friday</option>
+            <option>Saturday</option>
+            <option>Sunday</option>
+          </select>
+        </div>
+        <div class="admin-field">
+          <label>Time (e.g. 19:00)</label>
+          <input type="text" id="admin-time" placeholder="19:00">
+        </div>
+        <div class="admin-field">
+          <label>Emoji</label>
+          <input type="text" id="admin-emoji" placeholder="🍺">
+        </div>
+        <div class="admin-field">
+          <label>Title</label>
+          <input type="text" id="admin-title" placeholder="Pub quiz">
+        </div>
+        <div class="admin-field">
+          <label>Description</label>
+          <textarea id="admin-desc" rows="3" placeholder="Details…"></textarea>
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+          <button class="btn-sm btn-save" onclick="addAgendaItem()">Add Item</button>
+          <button class="btn-outline" onclick="refreshAllData()">↺ Refresh</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="closeLightbox()">
+  <button id="lightbox-close" onclick="closeLightbox()">×</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<div id="toast"></div>
+
+<script>
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwB08hw4DqHoM3HOgYjB43th7SZ6Cw5n3uvv34xfQzUgnYBWUw3BOSQsP6dBA1wT_n-/exec";
 
 let currentUser = null;
-let users = [];
-let agendaItems = [];
+let users        = [];
+let agendaItems  = [];
 let chatMessages = [];
-let ideas = [];
-let photos = [];
-let pinnedIds = new Set();
-let allComments = [];
+let ideas        = [];
+let photos       = [];
+let allComments  = [];
 
-/**
- * API BRIDGE: Fixed for CORS
- * We use 'no-cors' which allows the data to be sent even if the browser blocks the response.
- */
+// ── API ──────────────────────────────────────────────────
+
 async function callGoogle(action, payload = {}) {
   try {
     await fetch(WEB_APP_URL, {
       method: "POST",
-      mode: "no-cors", 
+      mode: "no-cors",
       cache: "no-cache",
-      headers: { "Content-Type": "text/plain" }, // GAS treats text/plain better for no-cors
+      headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({ action, payload })
     });
     return { success: true };
@@ -35,27 +678,11 @@ async function callGoogle(action, payload = {}) {
   }
 }
 
-// 2. INITIALIZE
-window.onload = function() {
-  const saved = sessionStorage.getItem('byork_user');
-  if (saved) {
-    currentUser = saved;
-    showApp();
-  }
-  refreshAllData();
-};
-
-/**
- * REFRESH: Fetches data via standard GET request.
- * We add the action parameter to the URL to bypass POST pre-flight checks.
- */
 async function refreshAllData() {
   try {
-    // Append the action to the URL string to trigger the doGet() in your script
     const response = await fetch(`${WEB_APP_URL}?action=getAppData`);
     const data = await response.json();
 
-    // Process Users
     users = data.users.slice(1).map(r => ({ name: r[0], hash: r[1] }));
     const sel = document.getElementById('login-name');
     const cur = sel.value;
@@ -65,17 +692,14 @@ async function refreshAllData() {
       opt.value = u.name; opt.textContent = u.name;
       sel.appendChild(opt);
     });
-    sel.value = cur;
+    if (cur) sel.value = cur;
 
-    // Map Data Arrays
-    agendaItems = data.agenda.slice(1).map(r => ({ id: r[0], day: r[1], time: r[2], title: r[3], desc: r[4], emoji: r[5] }));
+    agendaItems  = data.agenda.slice(1).map(r => ({ id: r[0], day: r[1], time: r[2], title: r[3], desc: r[4], emoji: r[5] }));
     chatMessages = data.chat.slice(1).map(r => ({ author: r[0], text: r[1], ts: r[2] }));
-    ideas = data.ideas.slice(1).map(r => ({ id: r[0], author: r[1], text: r[2], ups: r[3]||0, downs: r[4]||0 }));
-    photos = data.photos.slice(1).map(r => ({ id: r[0], uploader: r[1], caption: r[2], driveUrl: r[3] }));
-    pinnedIds = new Set(data.pinned.slice(1).map(r => r[0]));
-    allComments = data.comments.slice(1);
+    ideas        = data.ideas.slice(1).map(r => ({ id: r[0], author: r[1], text: r[2], ups: r[3]||0, downs: r[4]||0 }));
+    photos       = data.photos.slice(1).map(r => ({ id: r[0], uploader: r[1], caption: r[2], driveUrl: r[3] }));
+    allComments  = data.comments.slice(1);
 
-    // Trigger UI updates
     renderAgenda();
     renderChat();
     renderIdeas();
@@ -85,37 +709,69 @@ async function refreshAllData() {
   }
 }
 
-// 3. AUTHENTICATION (Unchanged)
+// ── AUTH ─────────────────────────────────────────────────
+
+window.onload = function() {
+  refreshAllData();
+  const saved = sessionStorage.getItem('byork_user');
+  if (saved) { currentUser = saved; showApp(); }
+};
+
 async function doLogin() {
   const name = document.getElementById('login-name').value;
   const pass = document.getElementById('login-password').value;
+  const err  = document.getElementById('login-error');
+  err.style.display = 'none';
   const user = users.find(u => u.name === name);
-  if (!user) return;
-  
+  if (!user) { err.style.display = 'block'; return; }
   const hash = await sha256(pass);
   if (hash === user.hash) {
     currentUser = name;
     sessionStorage.setItem('byork_user', name);
     showApp();
   } else {
-    document.getElementById('login-error').style.display = 'block';
+    err.style.display = 'block';
   }
 }
+
+document.getElementById('login-password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
 
 function doLogout() {
   sessionStorage.clear();
   location.reload();
 }
 
-// 4. EVENT HANDLERS (Write Operations)
+function showApp() {
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display  = 'block';
+  document.getElementById('header-username').textContent = currentUser;
+  if (currentUser === 'Bob') document.getElementById('nav-admin').style.display = 'inline-block';
+}
+
+// ── NAV ──────────────────────────────────────────────────
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'chat') {
+    const feed = document.getElementById('chat-feed');
+    feed.scrollTop = feed.scrollHeight;
+  }
+}
+
+// ── ACTIONS ──────────────────────────────────────────────
+
 async function sendChat() {
   const input = document.getElementById('chat-input');
   if (!input.value.trim()) return;
   const text = input.value;
   input.value = '';
-  
-  await callGoogle("addChat", { author: currentUser, text: text });
-  setTimeout(refreshAllData, 1200); 
+  await callGoogle("addChat", { author: currentUser, text });
+  setTimeout(refreshAllData, 1200);
 }
 
 async function submitComment(itemId) {
@@ -123,8 +779,7 @@ async function submitComment(itemId) {
   if (!input.value.trim()) return;
   const text = input.value;
   input.value = '';
-  
-  await callGoogle("addComment", { itemId, author: currentUser, text: text });
+  await callGoogle("addComment", { itemId, author: currentUser, text });
   setTimeout(refreshAllData, 1200);
 }
 
@@ -133,8 +788,7 @@ async function submitIdea() {
   if (!input.value.trim()) return;
   const text = input.value;
   input.value = '';
-
-  await callGoogle("addIdea", { author: currentUser, text: text });
+  await callGoogle("addIdea", { author: currentUser, text });
   setTimeout(refreshAllData, 1200);
 }
 
@@ -146,7 +800,7 @@ async function vote(ideaId, direction) {
 function uploadPhoto(input) {
   const file = input.files[0];
   if (!file) return;
-  showToast('Uploading...');
+  showToast('Uploading…');
   const reader = new FileReader();
   reader.onload = async function(e) {
     await callGoogle("uploadPhoto", {
@@ -154,7 +808,7 @@ function uploadPhoto(input) {
       filename: file.name,
       mimeType: file.type,
       base64: e.target.result.split(',')[1],
-      caption: prompt('Caption?') || ''
+      caption: prompt('Caption (optional)?') || ''
     });
     showToast('Uploaded!');
     setTimeout(refreshAllData, 2500);
@@ -164,18 +818,23 @@ function uploadPhoto(input) {
 
 async function addAgendaItem() {
   const payload = {
-    day: document.getElementById('admin-day').value,
-    time: document.getElementById('admin-time').value,
-    title: document.getElementById('admin-title').value,
-    desc: document.getElementById('admin-desc').value,
-    emoji: document.getElementById('admin-emoji').value
+    day:   document.getElementById('admin-day').value,
+    time:  document.getElementById('admin-time').value.trim(),
+    title: document.getElementById('admin-title').value.trim(),
+    desc:  document.getElementById('admin-desc').value.trim(),
+    emoji: document.getElementById('admin-emoji').value.trim()
   };
+  if (!payload.title) { showToast('Title is required'); return; }
   await callGoogle("addAgendaItem", payload);
-  showToast('Added!');
+  showToast('Item added!');
+  ['admin-time','admin-title','admin-desc','admin-emoji'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
   setTimeout(refreshAllData, 1500);
 }
 
-// 5. RENDERING FUNCTIONS (Unchanged)
+// ── RENDER ───────────────────────────────────────────────
+
 function renderAgenda() {
   const el = document.getElementById('agenda-content');
   const days = ['Friday','Saturday','Sunday'];
@@ -183,28 +842,27 @@ function renderAgenda() {
   days.forEach(day => {
     const items = agendaItems.filter(i => i.day === day);
     if (!items.length) return;
-    html += `<div class="agenda-day-header">${day}</div>`;
+    html += `<div class="day-header">${day}</div>`;
     items.forEach(item => {
-      const itemComments = allComments.filter(c => c[0] === item.id);
+      const comments = allComments.filter(c => c[0] === item.id);
       html += `
         <div class="card">
-          <div class="card-header">
-            ${item.time ? `<span class="agenda-time">${item.time}</span>` : ''}
-            <div class="card-title">${item.emoji} ${item.title}</div>
-          </div>
-          ${item.desc ? `<div class="card-desc">${item.desc}</div>` : ''}
-          <div class="comments-section">
-            <button class="comments-toggle" onclick="toggleComments('${item.id}')">
-              💬 ${itemComments.length} Comments
-            </button>
-            <div class="comments-list" id="comments-${item.id}">
-              <div id="comments-inner-${item.id}">
-                ${itemComments.map(c => `<div class="comment-item"><div class="comment-author">${c[1]}</div><div class="comment-text">${escHtml(c[2])}</div></div>`).join('')}
-              </div>
-              <div class="comment-input-row">
-                <input class="comment-input" id="comment-input-${item.id}" placeholder="Add a comment…" onkeydown="if(event.key==='Enter') submitComment('${item.id}')">
-                <button class="btn-small" onclick="submitComment('${item.id}')">Post</button>
-              </div>
+          ${item.time ? `<div class="agenda-time">${escHtml(item.time)}</div>` : ''}
+          <div class="agenda-title">${item.emoji ? item.emoji + ' ' : ''}${escHtml(item.title)}</div>
+          ${item.desc ? `<div class="agenda-desc">${escHtml(item.desc)}</div>` : ''}
+          <button class="comments-toggle" onclick="toggleComments('${item.id}')">
+            💬 ${comments.length} comment${comments.length !== 1 ? 's' : ''}
+          </button>
+          <div class="comments-list" id="comments-${item.id}">
+            ${comments.map(c => `
+              <div class="comment-item">
+                <div class="comment-author">${escHtml(c[1])}</div>
+                <div>${escHtml(c[2])}</div>
+              </div>`).join('')}
+            <div class="comment-input-row">
+              <input id="comment-input-${item.id}" placeholder="Add a comment…"
+                onkeydown="if(event.key==='Enter') submitComment('${item.id}')">
+              <button class="btn-sm btn-save" onclick="submitComment('${item.id}')">Post</button>
             </div>
           </div>
         </div>`;
@@ -215,11 +873,15 @@ function renderAgenda() {
 
 function renderChat() {
   const feed = document.getElementById('chat-feed');
+  if (!chatMessages.length) {
+    feed.innerHTML = '<p class="loading-msg">No banter yet.</p>';
+    return;
+  }
   feed.innerHTML = chatMessages.map(m => `
     <div class="chat-message ${m.author === currentUser ? 'mine' : 'theirs'}">
       <div class="chat-bubble">${escHtml(m.text)}</div>
-      <div class="chat-meta">${m.author === currentUser ? '' : m.author + ' · '}${formatTs(m.ts)}</div>
-    </div>`).join('') || '<p class="loading-msg">No banter yet.</p>';
+      <div class="chat-meta">${m.author !== currentUser ? escHtml(m.author) + ' · ' : ''}${formatTs(m.ts)}</div>
+    </div>`).join('');
   feed.scrollTop = feed.scrollHeight;
 }
 
@@ -228,41 +890,53 @@ function renderIdeas() {
     <div class="idea-item">
       <div style="flex:1">
         <div class="idea-text">${escHtml(idea.text)}</div>
-        <div class="idea-author">— ${idea.author}</div>
+        <div class="idea-author">— ${escHtml(idea.author)}</div>
       </div>
-      <button class="vote-btn" onclick="vote('${idea.id}', 'up')">👍 <span class="vote-count">${idea.ups}</span></button>
-      <button class="vote-btn" onclick="vote('${idea.id}', 'down')">👎 <span class="vote-count">${idea.downs}</span></button>
-    </div>`).join('') || '<p class="loading-msg">No ideas yet.</p>';
+      <button class="vote-btn" onclick="vote('${idea.id}','up')">👍 ${idea.ups}</button>
+      <button class="vote-btn" onclick="vote('${idea.id}','down')">👎 ${idea.downs}</button>
+    </div>`).join('') || '<p class="loading-msg">No ideas yet — be the first.</p>';
 }
 
 function renderPhotos() {
   document.getElementById('photo-grid').innerHTML = photos.map(p => `
-    <div class="photo-item">
-      <img src="${p.driveUrl}" onclick="openLightbox('${p.driveUrl}')">
+    <div class="photo-item" onclick="openLightbox('${p.driveUrl}')">
+      <img src="${p.driveUrl}" alt="${escHtml(p.caption || '')}">
       <div class="photo-caption">${escHtml(p.caption || p.uploader)}</div>
     </div>`).join('') || '<p class="loading-msg">No photos yet.</p>';
 }
 
-// 6. UTILS
+// ── UTILS ────────────────────────────────────────────────
+
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
-function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function formatTs(ts) { if(!ts) return ''; const d = new Date(ts); return d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}); }
-function toggleComments(id) { document.getElementById('comments-'+id).classList.toggle('open'); }
-function showSection(id, btn) {
-  document.querySelectorAll('.section, .nav-tab').forEach(el => el.classList.remove('active'));
-  document.getElementById('section-'+id).classList.add('active');
-  btn.classList.add('active');
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
-function showApp() {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  document.getElementById('header-username').textContent = currentUser;
-  if (currentUser === 'Bob') document.getElementById('admin-tab').style.display = 'inline-block';
+function formatTs(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
-function openLightbox(url) { document.getElementById('lightbox-img').src = url; document.getElementById('lightbox').classList.add('open'); }
-function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
-function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
+function toggleComments(id) {
+  document.getElementById('comments-' + id).classList.toggle('open');
+}
+function openLightbox(url) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
 </script>
+</body>
+</html>
