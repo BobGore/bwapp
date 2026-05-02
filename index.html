@@ -608,19 +608,10 @@
     <div class="main-wrap">
       <div class="section-title">Photos</div>
       <div class="section-sub">The weekend in pictures</div>
-      <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;">
-        <select id="photo-day" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:0.6rem 0.8rem;font-family:'Crimson Text',serif;font-size:0.95rem;outline:none;">
-          <option value="">Day…</option>
-          <option>Friday</option>
-          <option>Saturday</option>
-          <option>Sunday</option>
-          <option>Monday</option>
-        </select>
-        <label class="upload-label" style="margin-bottom:0;">
-          + Upload Photo
-          <input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(this)">
-        </label>
-      </div>
+      <label class="upload-label">
+        + Upload Photo
+        <input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(this)">
+      </label>
       <div class="photo-grid" id="photo-grid"></div>
     </div>
   </div>
@@ -835,7 +826,7 @@ function uploadPhoto(input) {
       mimeType: file.type,
       base64: e.target.result.split(',')[1],
       caption: prompt('Caption (optional)?') || '',
-      day: document.getElementById('photo-day').value
+      day: new Date().toLocaleDateString('en-GB', { weekday: 'long' })
     });
     showToast('Uploaded!');
     setTimeout(refreshAllData, 2500);
