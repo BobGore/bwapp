@@ -753,6 +753,7 @@ let chatMessages = [];
 let ideas        = [];
 let photos       = [];
 let allComments  = [];
+let allVotes     = [];
 
 // ── API ──────────────────────────────────────────────────
 
@@ -792,6 +793,7 @@ async function refreshAllData() {
     places       = (data.places || []).slice(1).map(r => ({ name: r[0], category: r[1], location: r[2] || '', website: r[3] || '', notes: r[4] || '' }));
     chatMessages = data.chat.slice(1).map(r => ({ author: r[0], text: r[1], ts: r[2] }));
     ideas        = data.ideas.slice(1).map(r => ({ id: r[0], author: r[1], text: r[2], ups: r[3]||0, downs: r[4]||0 }));
+    allVotes     = (data.votes || []).slice(1).map(r => ({ ideaId: String(r[0]), author: r[1], direction: r[2] }));
     photos       = data.photos.slice(1).map(r => ({ id: r[0], uploader: r[1], caption: r[2], driveUrl: r[3], day: r[4] || '' }));
     allComments  = data.comments.slice(1);
 
@@ -1044,17 +1046,21 @@ function renderChat() {
 function renderIdeas() {
   const myVotes = getMyVotes();
   document.getElementById('ideas-list').innerHTML = ideas.map(idea => {
-    const voted = myVotes[idea.id];
+    const voted    = myVotes[idea.id];
+    const upVoters = allVotes.filter(v => v.ideaId === String(idea.id) && v.direction === 'up').map(v => v.author);
+    const dnVoters = allVotes.filter(v => v.ideaId === String(idea.id) && v.direction === 'down').map(v => v.author);
     const upStyle  = voted === 'up'   ? 'border-color:var(--gold);color:var(--gold);' : '';
     const downStyle = voted === 'down' ? 'border-color:var(--red);color:var(--red);'  : '';
+    const upTitle  = upVoters.length   ? upVoters.join(', ')   : '';
+    const dnTitle  = dnVoters.length   ? dnVoters.join(', ')   : '';
     return `
     <div class="idea-item">
       <div style="flex:1">
         <div class="idea-text">${escHtml(idea.text)}</div>
         <div class="idea-author">— ${escHtml(idea.author)}</div>
       </div>
-      <button class="vote-btn" style="${upStyle}" onclick="vote('${idea.id}','up')" ${voted ? 'disabled' : ''}>👍 ${idea.ups}</button>
-      <button class="vote-btn" style="${downStyle}" onclick="vote('${idea.id}','down')" ${voted ? 'disabled' : ''}>👎 ${idea.downs}</button>
+      <button class="vote-btn" style="${upStyle}" onclick="vote('${idea.id}','up')" ${voted ? 'disabled' : ''} ${upTitle ? `title="${escHtml(upTitle)}"` : ''}>👍 ${idea.ups}</button>
+      <button class="vote-btn" style="${downStyle}" onclick="vote('${idea.id}','down')" ${voted ? 'disabled' : ''} ${dnTitle ? `title="${escHtml(dnTitle)}"` : ''}>👎 ${idea.downs}</button>
     </div>`;
   }).join('') || '<p class="loading-msg">No ideas yet — be the first.</p>';
 }
