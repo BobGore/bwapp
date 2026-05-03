@@ -895,10 +895,11 @@ async function sendChat() {
   input.value = '';
   await callGoogle("addChat", { author: currentUser, text });
   if (text.includes('@byork')) {
-    console.log('I heard you');
-    alert('Triggered!');
+    callGoogle('askByork', { text, author: currentUser });
+    setTimeout(refreshAllData, 5000);
+  } else {
+    setTimeout(refreshAllData, 1200);
   }
-  setTimeout(refreshAllData, 1200);
 }
 
 async function submitComment(itemId) {
