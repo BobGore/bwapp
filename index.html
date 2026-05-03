@@ -921,9 +921,18 @@ async function submitIdea() {
   setTimeout(refreshAllData, 1200);
 }
 
+function getMyVotes() {
+  return JSON.parse(localStorage.getItem('bw_votes') || '{}');
+}
+
 async function vote(ideaId, direction) {
-  await callGoogle("vote", { ideaId, direction });
-  setTimeout(refreshAllData, 600);
+  const myVotes = getMyVotes();
+  if (myVotes[ideaId]) return; // already voted
+  myVotes[ideaId] = direction;
+  localStorage.setItem('bw_votes', JSON.stringify(myVotes));
+  renderIdeas(); // update buttons immediately
+  await callGoogle("vote", { ideaId, direction, author: currentUser });
+  setTimeout(refreshAllData, 1200);
 }
 
 function uploadPhoto(input) {
@@ -1033,15 +1042,21 @@ function renderChat() {
 }
 
 function renderIdeas() {
-  document.getElementById('ideas-list').innerHTML = ideas.map(idea => `
+  const myVotes = getMyVotes();
+  document.getElementById('ideas-list').innerHTML = ideas.map(idea => {
+    const voted = myVotes[idea.id];
+    const upStyle  = voted === 'up'   ? 'border-color:var(--gold);color:var(--gold);' : '';
+    const downStyle = voted === 'down' ? 'border-color:var(--red);color:var(--red);'  : '';
+    return `
     <div class="idea-item">
       <div style="flex:1">
         <div class="idea-text">${escHtml(idea.text)}</div>
         <div class="idea-author">— ${escHtml(idea.author)}</div>
       </div>
-      <button class="vote-btn" onclick="vote('${idea.id}','up')">👍 ${idea.ups}</button>
-      <button class="vote-btn" onclick="vote('${idea.id}','down')">👎 ${idea.downs}</button>
-    </div>`).join('') || '<p class="loading-msg">No ideas yet — be the first.</p>';
+      <button class="vote-btn" style="${upStyle}" onclick="vote('${idea.id}','up')" ${voted ? 'disabled' : ''}>👍 ${idea.ups}</button>
+      <button class="vote-btn" style="${downStyle}" onclick="vote('${idea.id}','down')" ${voted ? 'disabled' : ''}>👎 ${idea.downs}</button>
+    </div>`;
+  }).join('') || '<p class="loading-msg">No ideas yet — be the first.</p>';
 }
 
 function renderPhotos() {
