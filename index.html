@@ -894,6 +894,10 @@ async function sendChat() {
   const text = input.value;
   input.value = '';
   await callGoogle("addChat", { author: currentUser, text });
+  if (text.includes('@byork')) {
+    console.log('I heard you');
+    alert('Triggered!');
+  }
   setTimeout(refreshAllData, 1200);
 }
 
