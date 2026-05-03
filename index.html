@@ -807,7 +807,11 @@ async function refreshAllData() {
 window.onload = function() {
   refreshAllData();
   const saved = sessionStorage.getItem('byork_user');
-  if (saved) { currentUser = saved; showApp(); }
+  if (saved) {
+    currentUser = saved;
+    getFingerprint().then(fp => callGoogle('logDevice', { user: saved, deviceId: getDeviceId(), fingerprint: fp }));
+    showApp();
+  }
 };
 
 function getDeviceId() {
