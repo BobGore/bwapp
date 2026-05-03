@@ -816,6 +816,19 @@ function getDeviceId() {
   return id;
 }
 
+async function getFingerprint() {
+  const raw = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width + 'x' + screen.height + 'x' + screen.colorDepth,
+    navigator.hardwareConcurrency,
+    navigator.deviceMemory || '',
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    navigator.platform
+  ].join('|');
+  return sha256(raw);
+}
+
 async function doLogin() {
   const name = document.getElementById('login-name').value;
   const pass = document.getElementById('login-password').value;
@@ -827,7 +840,8 @@ async function doLogin() {
   if (hash === user.hash) {
     currentUser = name;
     sessionStorage.setItem('byork_user', name);
-    callGoogle('logDevice', { user: name, deviceId: getDeviceId() });
+    const fp = await getFingerprint();
+    callGoogle('logDevice', { user: name, deviceId: getDeviceId(), fingerprint: fp });
     showApp();
   } else {
     err.style.display = 'block';
