@@ -810,6 +810,12 @@ window.onload = function() {
   if (saved) { currentUser = saved; showApp(); }
 };
 
+function getDeviceId() {
+  let id = localStorage.getItem('bw_device');
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem('bw_device', id); }
+  return id;
+}
+
 async function doLogin() {
   const name = document.getElementById('login-name').value;
   const pass = document.getElementById('login-password').value;
@@ -821,6 +827,7 @@ async function doLogin() {
   if (hash === user.hash) {
     currentUser = name;
     sessionStorage.setItem('byork_user', name);
+    callGoogle('logDevice', { user: name, deviceId: getDeviceId() });
     showApp();
   } else {
     err.style.display = 'block';
