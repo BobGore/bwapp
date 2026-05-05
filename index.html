@@ -575,6 +575,28 @@
   }
   #toast.show { transform: translateX(-50%) translateY(0); }
 
+  /* ── COUNTDOWN ── */
+  #weekend-strip {
+    text-align: center;
+    padding: 0.5rem 1rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+  }
+  #weekend-strip.live {
+    background: rgba(201,168,76,0.08);
+    color: var(--gold);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+  }
+  #weekend-strip.over { color: var(--muted); font-family: 'DM Sans', sans-serif; font-style: italic; }
+  .countdown-time { color: var(--ale); font-weight: 500; }
+
   @media (max-width: 500px) {
     .nav-links a { padding: 0.65rem 0.8rem; font-size: 0.78rem; }
     .photo-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
@@ -615,6 +637,8 @@
       <button onclick="doLogout()">Logout</button>
     </div>
   </div>
+
+  <div id="weekend-strip"></div>
 
   <div class="nav-links">
     <a onclick="showView('agenda')" id="nav-agenda" class="active">Agenda</a>
@@ -870,6 +894,7 @@ function showApp() {
   document.getElementById('app').style.display  = 'block';
   document.getElementById('header-username').textContent = currentUser;
   if (currentUser === 'Bob') document.getElementById('nav-admin').style.display = 'inline-block';
+  startCountdown();
 }
 
 // ── NAV ──────────────────────────────────────────────────
@@ -1259,6 +1284,49 @@ function formatAgendaTime(val) {
   }
   // Already a plain string like "19:00"
   return s;
+}
+
+// ── COUNTDOWN ────────────────────────────────────────────
+
+const WEEKEND_START = new Date('2026-05-08T00:00:00+01:00'); // midnight BST Friday 8 May
+const WEEKEND_END   = new Date('2026-05-12T00:00:00+01:00'); // midnight BST after Monday 11 May
+
+let countdownInterval = null;
+
+function updateCountdown() {
+  const el = document.getElementById('weekend-strip');
+  if (!el) return;
+  const now = new Date();
+
+  if (now < WEEKEND_START) {
+    const diff = WEEKEND_START - now;
+    const days  = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins  = Math.floor((diff % 3600000) / 60000);
+    const secs  = Math.floor((diff % 60000) / 1000);
+    const parts = [];
+    if (days)  parts.push(days + 'd');
+    parts.push(String(hours).padStart(2,'0') + 'h');
+    parts.push(String(mins).padStart(2,'0') + 'm');
+    parts.push(String(secs).padStart(2,'0') + 's');
+    el.className = '';
+    el.innerHTML = `B Weekend in <span class="countdown-time">${parts.join(' ')}</span>`;
+  } else if (now < WEEKEND_END) {
+    const dayName = now.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'Europe/London' });
+    const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/London' });
+    el.className = 'live';
+    el.textContent = `B Weekend is Live · ${dayName} ${dateStr}`;
+    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+  } else {
+    el.className = 'over';
+    el.textContent = 'B Weekend · 8–11 May 2026 · What a weekend.';
+    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+  }
+}
+
+function startCountdown() {
+  updateCountdown();
+  if (new Date() < WEEKEND_END) countdownInterval = setInterval(updateCountdown, 1000);
 }
 
 function escHtml(str) {
