@@ -602,9 +602,11 @@
     object-fit: contain;
   }
   #lightbox-video {
-    max-width: 90vw;
-    max-height: 85vh;
-    outline: none;
+    width: 90vw;
+    max-width: 640px;
+    height: 50vw;
+    max-height: 360px;
+    border: none;
     display: none;
   }
   #lightbox-close {
@@ -830,7 +832,7 @@
 <div id="lightbox" onclick="handleLightboxClick(event)">
   <button id="lightbox-close" onclick="closeLightbox()">×</button>
   <img id="lightbox-img" src="" alt="" style="display:none;">
-  <video id="lightbox-video" controls playsinline></video>
+  <iframe id="lightbox-video" allowfullscreen allow="autoplay"></iframe>
   <div id="lightbox-caption"></div>
 </div>
 
@@ -1229,17 +1231,24 @@ function renderPhotos() {
 
 // ── LIGHTBOX ─────────────────────────────────────────────
 
+function drivePreviewUrl(lh3Url) {
+  // Extract file ID from https://lh3.googleusercontent.com/d/FILE_ID
+  const match = lh3Url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (!match) return lh3Url;
+  return `https://drive.google.com/file/d/${match[1]}/preview`;
+}
+
 function openLightbox(url, isVideo, caption) {
-  const lb      = document.getElementById('lightbox');
-  const img     = document.getElementById('lightbox-img');
-  const vid     = document.getElementById('lightbox-video');
-  const capEl   = document.getElementById('lightbox-caption');
+  const lb    = document.getElementById('lightbox');
+  const img   = document.getElementById('lightbox-img');
+  const vid   = document.getElementById('lightbox-video');
+  const capEl = document.getElementById('lightbox-caption');
 
   if (isVideo) {
     img.style.display = 'none';
+    img.src = '';
     vid.style.display = 'block';
-    vid.src = url;
-    vid.load();
+    vid.src = drivePreviewUrl(url);
   } else {
     vid.style.display = 'none';
     vid.src = '';
@@ -1255,7 +1264,6 @@ function closeLightbox() {
   const lb  = document.getElementById('lightbox');
   const vid = document.getElementById('lightbox-video');
   lb.classList.remove('open');
-  vid.pause();
   vid.src = '';
   document.getElementById('lightbox-img').src = '';
 }
