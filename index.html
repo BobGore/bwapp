@@ -402,7 +402,8 @@
     gap: 0.75rem;
   }
   .photo-item { cursor: pointer; }
-  .photo-item img {
+  .photo-item img,
+  .photo-item video {
     width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
@@ -410,7 +411,55 @@
     border: 1px solid var(--border);
     transition: border-color 0.2s;
   }
-  .photo-item img:hover { border-color: var(--gold); }
+  .photo-item img:hover,
+  .photo-item .video-thumb:hover { border-color: var(--gold); }
+  /* Video thumbnail wrapper — shows play icon overlay */
+  .video-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+    background: var(--black);
+  }
+  .video-thumb video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: none;
+    aspect-ratio: unset;
+    pointer-events: none;
+  }
+  .video-play-icon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.35);
+    transition: background 0.2s;
+  }
+  .video-thumb:hover .video-play-icon { background: rgba(0,0,0,0.55); }
+  .video-play-icon::after {
+    content: '▶';
+    color: white;
+    font-size: 2rem;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .media-badge {
+    display: inline-block;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--gold);
+    color: var(--black);
+    padding: 0.1rem 0.35rem;
+    border-radius: 2px;
+    margin-right: 0.25rem;
+    font-weight: 500;
+    vertical-align: middle;
+  }
   .photo-caption { font-size: 0.75rem; color: var(--muted); padding: 0.1rem 0; font-style: italic; }
   .photo-uploader {
     font-family: 'DM Sans', sans-serif;
@@ -540,22 +589,41 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.93);
+    background: rgba(0,0,0,0.95);
     z-index: 9999;
     align-items: center;
     justify-content: center;
+    flex-direction: column;
   }
   #lightbox.open { display: flex; }
-  #lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; }
+  #lightbox-img {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+  }
+  #lightbox-video {
+    max-width: 90vw;
+    max-height: 85vh;
+    outline: none;
+    display: none;
+  }
   #lightbox-close {
     position: absolute;
     top: 1rem; right: 1.5rem;
     font-size: 2.5rem;
-    color: var(--text);
+    color: white;
     cursor: pointer;
     background: none;
     border: none;
     line-height: 1;
+    z-index: 10000;
+  }
+  #lightbox-caption {
+    color: rgba(255,255,255,0.6);
+    font-size: 0.8rem;
+    margin-top: 0.75rem;
+    font-style: italic;
+    letter-spacing: 0.05em;
   }
 
   /* ── TOAST ── */
@@ -692,8 +760,8 @@
       <div class="section-title">Photos</div>
       <div class="section-sub">The B Weekend in pictures</div>
       <label class="upload-label">
-        + Upload Photo
-        <input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(this)">
+        + Upload Photo / Video
+        <input type="file" accept="image/*,video/*" style="display:none;" onchange="handleMediaUpload(this)">
       </label>
       <div class="photo-grid" id="photo-grid"></div>
     </div>
@@ -759,15 +827,20 @@
 </div>
 
 <!-- LIGHTBOX -->
-<div id="lightbox" onclick="closeLightbox()">
+<div id="lightbox" onclick="handleLightboxClick(event)">
   <button id="lightbox-close" onclick="closeLightbox()">×</button>
-  <img id="lightbox-img" src="" alt="">
+  <img id="lightbox-img" src="" alt="" style="display:none;">
+  <video id="lightbox-video" controls playsinline></video>
+  <div id="lightbox-caption"></div>
 </div>
 
 <div id="toast"></div>
 
 <script>
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwB08hw4DqHoM3HOgYjB43th7SZ6Cw5n3uvv34xfQzUgnYBWUw3BOSQsP6dBA1wT_n-/exec";
+
+// Max video size: 25 MB
+const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
 
 let currentUser = null;
 let users        = [];
@@ -959,33 +1032,55 @@ function getMyVotes() {
 
 async function vote(ideaId, direction) {
   const myVotes = getMyVotes();
-  if (myVotes[ideaId]) return; // already voted
+  if (myVotes[ideaId]) return;
   myVotes[ideaId] = direction;
   localStorage.setItem('bw_votes', JSON.stringify(myVotes));
-  renderIdeas(); // update buttons immediately
+  renderIdeas();
   await callGoogle("vote", { ideaId, direction, author: currentUser });
   setTimeout(refreshAllData, 1200);
 }
 
-function uploadPhoto(input) {
+// ── MEDIA UPLOAD (photos + videos) ───────────────────────
+
+function handleMediaUpload(input) {
   const file = input.files[0];
   if (!file) return;
-  showToast('Uploading…');
+
+  const isVideo = file.type.startsWith('video/');
+
+  // Reject oversized videos
+  if (isVideo && file.size > MAX_VIDEO_BYTES) {
+    showToast('Video too large — please trim to under ~30 seconds and try again');
+    input.value = '';
+    return;
+  }
+
+  showToast(isVideo ? 'Uploading video…' : 'Uploading…');
+
   const reader = new FileReader();
   reader.onload = async function(e) {
+    // Prefix the ID so we can tell videos from images when rendering
+    // The Apps Script uploadPhoto function is unchanged — it saves any file type to Drive
+    const idPrefix = isVideo ? 'VID' : 'IMG';
     await callGoogle("uploadPhoto", {
       uploader: currentUser,
-      filename: file.name,
+      filename: idPrefix + '-' + file.name,   // prefix carries through to Drive filename
       mimeType: file.type,
       base64: e.target.result.split(',')[1],
       caption: prompt('Caption (optional)?') || '',
       day: new Date().toLocaleDateString('en-GB', { weekday: 'long' })
     });
-    showToast('Uploaded!');
+    showToast(isVideo ? 'Video uploaded!' : 'Uploaded!');
     setTimeout(refreshAllData, 2500);
   };
   reader.readAsDataURL(file);
+
+  // Reset input so the same file can be re-selected if needed
+  input.value = '';
 }
+
+// Legacy alias kept in case anything still calls uploadPhoto directly
+function uploadPhoto(input) { handleMediaUpload(input); }
 
 async function addAgendaItem() {
   const payload = {
@@ -1095,13 +1190,79 @@ function renderIdeas() {
   }).join('') || '<p class="loading-msg">No ideas yet — be the first.</p>';
 }
 
+// Detect video by ID prefix (VID-) or by Drive URL heuristic
+function isVideoItem(photo) {
+  const id = String(photo.id || '');
+  return id.startsWith('VID-') || id.startsWith('VID');
+}
+
 function renderPhotos() {
-  document.getElementById('photo-grid').innerHTML = photos.map(p => `
-    <div class="photo-item" onclick="openLightbox('${p.driveUrl}')">
-      <img src="${p.driveUrl}" alt="${escHtml(p.caption || '')}">
-      <div class="photo-uploader">${escHtml(p.uploader)}${p.day ? ` <span class="photo-day">· ${escHtml(p.day)}</span>` : ''}</div>
-      ${p.caption ? `<div class="photo-caption">${escHtml(p.caption)}</div>` : ''}
-    </div>`).join('') || '<p class="loading-msg">No photos yet.</p>';
+  const grid = document.getElementById('photo-grid');
+  if (!photos.length) {
+    grid.innerHTML = '<p class="loading-msg">No photos yet.</p>';
+    return;
+  }
+  grid.innerHTML = photos.map(p => {
+    const video = isVideoItem(p);
+    const safeCaption = escHtml(p.caption || '');
+    const safeUploader = escHtml(p.uploader);
+    const safeDay = p.day ? escHtml(p.day) : '';
+    const safeUrl = escHtml(p.driveUrl);
+
+    const thumb = video
+      ? `<div class="video-thumb" onclick="openLightbox('${safeUrl}', true, '${safeCaption}')">
+           <video src="${safeUrl}" muted playsinline preload="metadata"></video>
+           <div class="video-play-icon"></div>
+         </div>`
+      : `<img src="${safeUrl}" alt="${safeCaption}" onclick="openLightbox('${safeUrl}', false, '${safeCaption}')">`;
+
+    return `
+      <div class="photo-item">
+        ${thumb}
+        <div class="photo-uploader">
+          ${video ? '<span class="media-badge">video</span>' : ''}${safeUploader}${safeDay ? ` <span class="photo-day">· ${safeDay}</span>` : ''}
+        </div>
+        ${p.caption ? `<div class="photo-caption">${safeCaption}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+// ── LIGHTBOX ─────────────────────────────────────────────
+
+function openLightbox(url, isVideo, caption) {
+  const lb      = document.getElementById('lightbox');
+  const img     = document.getElementById('lightbox-img');
+  const vid     = document.getElementById('lightbox-video');
+  const capEl   = document.getElementById('lightbox-caption');
+
+  if (isVideo) {
+    img.style.display = 'none';
+    vid.style.display = 'block';
+    vid.src = url;
+    vid.load();
+  } else {
+    vid.style.display = 'none';
+    vid.src = '';
+    img.style.display = 'block';
+    img.src = url;
+  }
+
+  capEl.textContent = caption || '';
+  lb.classList.add('open');
+}
+
+function closeLightbox() {
+  const lb  = document.getElementById('lightbox');
+  const vid = document.getElementById('lightbox-video');
+  lb.classList.remove('open');
+  vid.pause();
+  vid.src = '';
+  document.getElementById('lightbox-img').src = '';
+}
+
+function handleLightboxClick(e) {
+  // Close if clicking the backdrop (not the media or controls)
+  if (e.target === document.getElementById('lightbox')) closeLightbox();
 }
 
 // ── UTILS ────────────────────────────────────────────────
@@ -1116,8 +1277,8 @@ function mapsUrl(location) {
 }
 
 let leafletMap = null;
-let geocodedCache = null;      // [{item, lat, lng}] agenda locations
-let placeGeoCache = null;      // [{place, lat, lng}] places of interest
+let geocodedCache = null;
+let placeGeoCache = null;
 
 const redIcon = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
@@ -1146,11 +1307,9 @@ async function initMap() {
     leafletMap.eachLayer(l => { if (l instanceof L.Marker) leafletMap.removeLayer(l); });
   }
 
-  // Invalidate caches when data changes
   if (geocodedCache && geocodedCache.length !== withLocation.length) geocodedCache = null;
   if (placeGeoCache && placeGeoCache.length !== withPlaces.length)   placeGeoCache = null;
 
-  // Geocode agenda items (blue markers)
   if (!geocodedCache) {
     geocodedCache = [];
     for (let i = 0; i < withLocation.length; i++) {
@@ -1164,7 +1323,6 @@ async function initMap() {
     }
   }
 
-  // Geocode places of interest (red markers)
   if (!placeGeoCache) {
     placeGeoCache = [];
     for (let i = 0; i < withPlaces.length; i++) {
@@ -1207,7 +1365,6 @@ function renderMapDays() {
 
   let html = '';
 
-  // ── Agenda day sections ──
   const days = ['Friday','Saturday','Sunday','Monday'];
   days.forEach(day => {
     const items = withLocation.filter(i => i.day === day);
@@ -1235,7 +1392,6 @@ function renderMapDays() {
       </div>`;
   });
 
-  // ── Places of interest by category ──
   if (withPlaces.length) {
     const categories = [...new Set(withPlaces.map(p => p.category || 'Other'))];
     if (html) html += `<div style="margin-top:1.5rem;font-size:0.75rem;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);padding-bottom:0.5rem;border-bottom:1px solid var(--border);">Places of Interest</div>`;
@@ -1270,26 +1426,22 @@ function toggleMapDay(dayId) {
   hdr.classList.toggle('collapsed');
 }
 
-function renderMapLocations() {
-  renderMapDays();
-}
+function renderMapLocations() { renderMapDays(); }
 
 function formatAgendaTime(val) {
   if (!val) return '';
   const s = String(val);
-  // ISO timestamp from Sheets time cell e.g. "1899-12-30T17:00:00.000Z"
   if (s.includes('T')) {
     const d = new Date(s);
     return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
   }
-  // Already a plain string like "19:00"
   return s;
 }
 
 // ── COUNTDOWN ────────────────────────────────────────────
 
-const WEEKEND_START = new Date('2026-05-08T00:00:00+01:00'); // midnight BST Friday 8 May
-const WEEKEND_END   = new Date('2026-05-12T00:00:00+01:00'); // midnight BST after Monday 11 May
+const WEEKEND_START = new Date('2026-05-08T00:00:00+01:00');
+const WEEKEND_END   = new Date('2026-05-12T00:00:00+01:00');
 
 let countdownInterval = null;
 
@@ -1340,13 +1492,6 @@ function formatTs(ts) {
 }
 function toggleComments(id) {
   document.getElementById('comments-' + id).classList.toggle('open');
-}
-function openLightbox(url) {
-  document.getElementById('lightbox-img').src = url;
-  document.getElementById('lightbox').classList.add('open');
-}
-function closeLightbox() {
-  document.getElementById('lightbox').classList.remove('open');
 }
 let toastTimer;
 function showToast(msg) {
