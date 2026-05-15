@@ -954,6 +954,10 @@ async function refreshAllData() {
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 
+// Fallback: if the master directory is unreachable, use this URL directly.
+// Update this each year alongside the Directory sheet.
+const FALLBACK_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwB08hw4DqHoM3HOgYjB43th7SZ6Cw5n3uvv34xfQzUgnYBWUw3BOSQsP6dBA1wT_n-/exec";
+
 window.onload = async function() {
   // Step 1: fetch the master directory to discover the live weekend's script URL.
   try {
@@ -966,7 +970,14 @@ window.onload = async function() {
       activeScriptURL = liveWeekend.scriptURL;
     }
   } catch (err) {
-    console.error('Failed to fetch master directory:', err);
+    console.error('Failed to fetch master directory — using fallback URL:', err);
+  }
+
+  // If the directory fetch failed or returned no live weekend, fall back to the
+  // hardcoded script URL so the app keeps working.
+  if (!activeScriptURL) {
+    activeScriptURL = FALLBACK_SCRIPT_URL;
+    console.warn('Using fallback script URL');
   }
 
   // Step 2: fetch per-year data (populates users, agenda, etc. and reads Config).
@@ -1687,14 +1698,7 @@ function formatAgendaTime(val) {
   return s;
 }
 
-<<<<<<< HEAD
-// ── COUNTDOWN ────────────────────────────────────────────
-
-const WEEKEND_START = new Date('2026-05-08T00:00:00+01:00');
-const WEEKEND_END   = new Date('2026-05-12T00:00:00+01:00');
-=======
 // ── COUNTDOWN ─────────────────────────────────────────────────────────────────
->>>>>>> 995b460 (Make app fully config-driven to support multiple years without code changes)
 
 let countdownInterval = null;
 
