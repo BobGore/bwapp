@@ -1515,11 +1515,18 @@ function renderArchiveData(data, weekend) {
     const withLocation = archAgenda.filter(i => i.location);
     const withPlaces   = archPlaces.filter(p => p.location);
 
-    archiveMap = L.map('archive-leaflet-map').setView([53.9590, -1.0815], 14);
+    archiveMap = L.map('archive-leaflet-map').setView([54.0, -2.0], 7);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(archiveMap);
     setTimeout(() => archiveMap && archiveMap.invalidateSize(), 100);
+
+    // Centre on the archive year's location before markers load
+    if (activeWeekend && activeWeekend.location) {
+      geocodeQuery(activeWeekend.location).then(coords => {
+        if (coords && archiveMap) archiveMap.setView([coords.lat, coords.lng], 13);
+      }).catch(() => {});
+    }
 
     const bounds = [];
 
