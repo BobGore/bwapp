@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BYörk 2026</title>
+<title>The B Weekend</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -602,11 +602,9 @@
     object-fit: contain;
   }
   #lightbox-video {
-    width: 90vw;
-    max-width: 640px;
-    height: 50vw;
-    max-height: 360px;
-    border: none;
+    max-width: 90vw;
+    max-height: 85vh;
+    outline: none;
     display: none;
   }
   #lightbox-close {
@@ -711,12 +709,13 @@
   <div id="weekend-strip"></div>
 
   <div class="nav-links">
-    <a onclick="showView('agenda')" id="nav-agenda" class="active">Agenda</a>
-    <a onclick="showView('chat')"   id="nav-chat">Chat</a>
-    <a onclick="showView('ideas')"  id="nav-ideas">Ideas</a>
-    <a onclick="showView('photos')" id="nav-photos">Photos</a>
-    <a onclick="showView('map')"    id="nav-map">Map</a>
-    <a onclick="showView('admin')"  id="nav-admin" style="display:none;">Admin</a>
+    <a onclick="showView('agenda')"  id="nav-agenda"  class="active">Agenda</a>
+    <a onclick="showView('chat')"    id="nav-chat">Chat</a>
+    <a onclick="showView('ideas')"   id="nav-ideas">Ideas</a>
+    <a onclick="showView('photos')"  id="nav-photos">Photos</a>
+    <a onclick="showView('map')"     id="nav-map">Map</a>
+    <a onclick="showView('archive')" id="nav-archive">Archive</a>
+    <a onclick="showView('admin')"   id="nav-admin" style="display:none;">Admin</a>
   </div>
 
   <!-- AGENDA -->
@@ -782,7 +781,23 @@
     </div>
   </div>
 
-  <!-- ADMIN (Bob only) -->
+  <!-- ARCHIVE -->
+  <div id="view-archive" class="view">
+    <div class="main-wrap">
+      <div class="section-title">Archive</div>
+      <div class="section-sub">Past B Weekends</div>
+      <div id="archive-list"></div>
+      <div id="archive-content" style="display:none;">
+        <div style="margin-bottom:1rem;">
+          <button class="btn-outline" onclick="returnToLive()">← Back to <span id="back-label"></span></button>
+        </div>
+        <div id="archive-tabs" class="nav-links" style="justify-content:flex-start;border:none;margin-bottom:1rem;"></div>
+        <div id="archive-data"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN (admin user only) -->
   <div id="view-admin" class="view">
     <div class="main-wrap">
       <div class="section-title">Admin</div>
@@ -816,7 +831,7 @@
         </div>
         <div class="admin-field">
           <label>Location (address or Google Maps link)</label>
-          <input type="text" id="admin-location" placeholder="Brew York, Walmgate, York">
+          <input type="admin-location" id="admin-location" placeholder="Brew York, Walmgate, York">
         </div>
         <div style="display:flex;gap:0.5rem;">
           <button class="btn-sm btn-save" onclick="addAgendaItem()">Add Item</button>
@@ -832,14 +847,32 @@
 <div id="lightbox" onclick="handleLightboxClick(event)">
   <button id="lightbox-close" onclick="closeLightbox()">×</button>
   <img id="lightbox-img" src="" alt="" style="display:none;">
-  <iframe id="lightbox-video" allowfullscreen allow="autoplay"></iframe>
+  <video id="lightbox-video" controls playsinline></video>
   <div id="lightbox-caption"></div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwB08hw4DqHoM3HOgYjB43th7SZ6Cw5n3uvv34xfQzUgnYBWUw3BOSQsP6dBA1wT_n-/exec";
+// ── MASTER CONFIG ──────────────────────────────────────────────────────────────
+// This is the only hardcoded URL. It returns the directory of all weekends.
+//
+// Annual setup:
+//   1. Add a row to the "BWapp Directory" Google Sheet with status "live".
+//   2. Set the previous live row's status to "archive".
+//   3. The app will automatically pick up the new year's script URL on next load.
+//      No code changes required.
+//
+// See SETUP.md for full instructions.
+const MASTER_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxMZdUC6CTfBhk_xmddXqYbLupUvEB98IWzZVzms7Gl-KqHk5JHg7SgI3c1RdahEZ2j/exec";
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+
+let weekendDirectory = [];
+let liveWeekend      = null;
+let activeWeekend    = null; // currently being viewed (may be an archive year)
+let activeScriptURL  = null;
+let appConfig        = {};
 
 // Max video size: 25 MB
 const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
@@ -854,11 +887,19 @@ let photos       = [];
 let allComments  = [];
 let allVotes     = [];
 
-// ── API ──────────────────────────────────────────────────
+// ── COUNTDOWN DATES ───────────────────────────────────────────────────────────
+// Set by applyConfig() from the live weekend's directory entry.
+// Assumed BST (+01:00) — appropriate for a UK May/June event.
+
+let weekendStart = null;
+let weekendEnd   = null;
+
+// ── API ───────────────────────────────────────────────────────────────────────
 
 async function callGoogle(action, payload = {}) {
+  if (!activeScriptURL) return { success: false };
   try {
-    await fetch(WEB_APP_URL, {
+    await fetch(activeScriptURL, {
       method: "POST",
       mode: "no-cors",
       cache: "no-cache",
@@ -873,9 +914,15 @@ async function callGoogle(action, payload = {}) {
 }
 
 async function refreshAllData() {
+  if (!activeScriptURL) return;
   try {
-    const response = await fetch(`${WEB_APP_URL}?action=getAppData`);
+    const response = await fetch(`${activeScriptURL}?action=getAppData`);
     const data = await response.json();
+
+    if (data.config) {
+      appConfig = data.config;
+      applyConfig();
+    }
 
     users = data.users.slice(1).map(r => ({ name: r[0], hash: r[1] }));
     const sel = document.getElementById('login-name');
@@ -905,11 +952,29 @@ async function refreshAllData() {
   }
 }
 
-// ── AUTH ─────────────────────────────────────────────────
+// ── AUTH ──────────────────────────────────────────────────────────────────────
 
-window.onload = function() {
-  refreshAllData();
-  const saved = sessionStorage.getItem('byork_user');
+window.onload = async function() {
+  // Step 1: fetch the master directory to discover the live weekend's script URL.
+  try {
+    const resp = await fetch(`${MASTER_SCRIPT_URL}?cb=${Date.now()}`);
+    const dir  = await resp.json();
+    weekendDirectory = dir.weekends || [];
+    liveWeekend      = weekendDirectory.find(w => w.status === 'live') || null;
+    if (liveWeekend) {
+      activeWeekend  = liveWeekend;
+      activeScriptURL = liveWeekend.scriptURL;
+    }
+  } catch (err) {
+    console.error('Failed to fetch master directory:', err);
+  }
+
+  // Step 2: fetch per-year data (populates users, agenda, etc. and reads Config).
+  await refreshAllData();
+
+  // Step 3: check for an existing session using the config-provided key.
+  const sessionKey = appConfig.sessionKey || 'bwapp_session';
+  const saved = sessionStorage.getItem(sessionKey);
   if (saved) {
     currentUser = saved;
     getFingerprint().then(fp => callGoogle('logDevice', { user: saved, deviceId: getDeviceId(), fingerprint: fp }));
@@ -946,7 +1011,7 @@ async function doLogin() {
   const hash = await sha256(pass);
   if (hash === user.hash) {
     currentUser = name;
-    sessionStorage.setItem('byork_user', name);
+    sessionStorage.setItem(appConfig.sessionKey || 'bwapp_session', name);
     const fp = await getFingerprint();
     callGoogle('logDevice', { user: name, deviceId: getDeviceId(), fingerprint: fp });
     showApp();
@@ -968,25 +1033,55 @@ function showApp() {
   document.getElementById('gate').style.display = 'none';
   document.getElementById('app').style.display  = 'block';
   document.getElementById('header-username').textContent = currentUser;
-  if (currentUser === 'Bob') document.getElementById('nav-admin').style.display = 'inline-block';
+  if (currentUser === (appConfig.adminUser || 'Bob')) {
+    document.getElementById('nav-admin').style.display = 'inline-block';
+  }
   startCountdown();
 }
 
-// ── NAV ──────────────────────────────────────────────────
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+
+function applyConfig() {
+  const name = appConfig.eventName || '';
+  const year = appConfig.eventYear || '';
+  const loc  = appConfig.location  || '';
+
+  document.title = name + ' ' + year;
+  document.querySelector('.gate-sub').textContent = name + ' · ' + year;
+  document.querySelector('.site-header h2').textContent = name + ' ' + year;
+  document.querySelector('#view-map .section-title').textContent = loc;
+
+  // Parse countdown dates from the live weekend's directory entry.
+  if (liveWeekend) {
+    weekendStart = liveWeekend.startDate ? new Date(liveWeekend.startDate + 'T00:00:00+01:00') : null;
+    weekendEnd   = liveWeekend.endDate   ? new Date(liveWeekend.endDate   + 'T00:00:00+01:00') : null;
+  }
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
 
 function showView(name) {
+  // When leaving the archive, always restore the live script URL so writes
+  // never accidentally target an archived year's sheet.
+  if (name !== 'archive' && liveWeekend) {
+    activeWeekend  = liveWeekend;
+    activeScriptURL = liveWeekend.scriptURL;
+  }
+
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
   document.getElementById('nav-' + name).classList.add('active');
+
   if (name === 'chat') {
     const feed = document.getElementById('chat-feed');
     feed.scrollTop = feed.scrollHeight;
   }
-  if (name === 'map') initMap();
+  if (name === 'map')     initMap();
+  if (name === 'archive') renderArchiveList();
 }
 
-// ── ACTIONS ──────────────────────────────────────────────
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
 
 async function sendChat() {
   const input = document.getElementById('chat-input');
@@ -1102,7 +1197,7 @@ async function addAgendaItem() {
   setTimeout(refreshAllData, 1500);
 }
 
-// ── RENDER ───────────────────────────────────────────────
+// ── RENDER ────────────────────────────────────────────────────────────────────
 
 function renderAgenda() {
   const el = document.getElementById('agenda-content');
@@ -1231,24 +1326,17 @@ function renderPhotos() {
 
 // ── LIGHTBOX ─────────────────────────────────────────────
 
-function drivePreviewUrl(lh3Url) {
-  // Extract file ID from https://lh3.googleusercontent.com/d/FILE_ID
-  const match = lh3Url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (!match) return lh3Url;
-  return `https://drive.google.com/file/d/${match[1]}/preview`;
-}
-
 function openLightbox(url, isVideo, caption) {
-  const lb    = document.getElementById('lightbox');
-  const img   = document.getElementById('lightbox-img');
-  const vid   = document.getElementById('lightbox-video');
-  const capEl = document.getElementById('lightbox-caption');
+  const lb      = document.getElementById('lightbox');
+  const img     = document.getElementById('lightbox-img');
+  const vid     = document.getElementById('lightbox-video');
+  const capEl   = document.getElementById('lightbox-caption');
 
   if (isVideo) {
     img.style.display = 'none';
-    img.src = '';
     vid.style.display = 'block';
-    vid.src = drivePreviewUrl(url);
+    vid.src = url;
+    vid.load();
   } else {
     vid.style.display = 'none';
     vid.src = '';
@@ -1264,6 +1352,7 @@ function closeLightbox() {
   const lb  = document.getElementById('lightbox');
   const vid = document.getElementById('lightbox-video');
   lb.classList.remove('open');
+  vid.pause();
   vid.src = '';
   document.getElementById('lightbox-img').src = '';
 }
@@ -1273,7 +1362,159 @@ function handleLightboxClick(e) {
   if (e.target === document.getElementById('lightbox')) closeLightbox();
 }
 
-// ── UTILS ────────────────────────────────────────────────
+// ── ARCHIVE ───────────────────────────────────────────────────────────────────
+
+function renderArchiveList() {
+  const list    = document.getElementById('archive-list');
+  const content = document.getElementById('archive-content');
+  list.style.display    = 'block';
+  content.style.display = 'none';
+
+  const archives = weekendDirectory.filter(w => w.status === 'archive');
+  if (!archives.length) {
+    list.innerHTML = '<p class="loading-msg">No archived weekends yet.</p>';
+    return;
+  }
+  list.innerHTML = archives.map(w => `
+    <div class="card" style="cursor:pointer;margin-bottom:0.75rem;" onclick="loadArchive(${JSON.stringify(w).replace(/"/g, '&quot;')})">
+      <div class="agenda-title">${escHtml(w.name)} ${escHtml(String(w.year))}</div>
+      <div class="agenda-desc">${escHtml(w.location)}</div>
+    </div>
+  `).join('');
+}
+
+async function loadArchive(weekend) {
+  activeWeekend  = weekend;
+  activeScriptURL = weekend.scriptURL;
+  document.getElementById('archive-list').style.display    = 'none';
+  document.getElementById('archive-content').style.display = 'block';
+  document.getElementById('back-label').textContent = liveWeekend
+    ? liveWeekend.name + ' ' + liveWeekend.year
+    : 'Live';
+  document.getElementById('archive-data').innerHTML = '<p class="loading-msg">Loading…</p>';
+
+  try {
+    const response = await fetch(`${activeScriptURL}?action=getAppData`);
+    const data     = await response.json();
+    renderArchiveData(data, weekend);
+  } catch (err) {
+    document.getElementById('archive-data').innerHTML = '<p class="loading-msg">Failed to load archive.</p>';
+  }
+}
+
+function returnToLive() {
+  activeWeekend  = liveWeekend;
+  activeScriptURL = liveWeekend ? liveWeekend.scriptURL : activeScriptURL;
+  renderArchiveList();
+}
+
+function renderArchiveData(data, weekend) {
+  const archiveTabs   = document.getElementById('archive-tabs');
+  const archiveDataEl = document.getElementById('archive-data');
+
+  const archAgenda   = (data.agenda   || []).slice(1).map(r => ({ id: r[0], day: r[1], time: r[2], title: r[3], desc: r[4], emoji: r[5], location: r[6] || '' }));
+  const archChat     = (data.chat     || []).slice(1).map(r => ({ author: r[0], text: r[1], ts: r[2] }));
+  const archIdeas    = (data.ideas    || []).slice(1).map(r => ({ id: r[0], author: r[1], text: r[2], ups: r[3]||0, downs: r[4]||0 }));
+  const archPhotos   = (data.photos   || []).slice(1).map(r => ({ id: r[0], uploader: r[1], caption: r[2], driveUrl: r[3], day: r[4] || '' }));
+  const archComments = (data.comments || []).slice(1);
+  const archVotes    = (data.votes    || []).slice(1).map(r => ({ ideaId: String(r[0]), author: r[1], direction: r[2] }));
+
+  function renderAgendaTab() {
+    const days = ['Friday','Saturday','Sunday','Monday'];
+    let html = '';
+    days.forEach(day => {
+      const items = archAgenda.filter(i => i.day === day);
+      if (!items.length) return;
+      html += `<div class="day-header" style="cursor:default;">${escHtml(day)}</div><div class="day-items">`;
+      items.forEach(item => {
+        const comments = archComments.filter(c => String(c[0]) === String(item.id));
+        html += `
+          <div class="card">
+            ${item.time ? `<div class="agenda-time">${escHtml(formatAgendaTime(item.time))}</div>` : ''}
+            <div class="agenda-title">${item.emoji ? item.emoji + ' ' : ''}${escHtml(item.title)}</div>
+            ${item.desc ? `<div class="agenda-desc">${escHtml(item.desc)}</div>` : ''}
+            ${item.location ? `<a class="map-location-link" href="${mapsUrl(item.location)}" target="_blank">📍 View on map</a>` : ''}
+            ${comments.length ? `
+              <div class="comments-list open" style="margin-top:0.5rem;">
+                ${comments.map(c => `
+                  <div class="comment-item">
+                    <div class="comment-author">${escHtml(c[1])}</div>
+                    <div>${escHtml(c[2])}</div>
+                  </div>`).join('')}
+              </div>` : ''}
+          </div>`;
+      });
+      html += `</div>`;
+    });
+    return html || '<p class="loading-msg">No agenda items.</p>';
+  }
+
+  function renderChatTab() {
+    if (!archChat.length) return '<p class="loading-msg">No messages.</p>';
+    return `<div class="chat-feed" style="height:auto;max-height:500px;">` +
+      archChat.map(m => `
+        <div class="chat-message theirs">
+          <div class="chat-author">${escHtml(m.author)}</div>
+          <div class="chat-bubble">${escHtml(m.text)}</div>
+          <div class="chat-meta">${formatTs(m.ts)}</div>
+        </div>`).join('') +
+      `</div>`;
+  }
+
+  function renderIdeasTab() {
+    if (!archIdeas.length) return '<p class="loading-msg">No ideas.</p>';
+    return archIdeas.map(idea => {
+      const upVoters = archVotes.filter(v => v.ideaId === String(idea.id) && v.direction === 'up').map(v => v.author);
+      const dnVoters = archVotes.filter(v => v.ideaId === String(idea.id) && v.direction === 'down').map(v => v.author);
+      return `
+        <div class="idea-item">
+          <div style="flex:1">
+            <div class="idea-text">${escHtml(idea.text)}</div>
+            <div class="idea-author">— ${escHtml(idea.author)}</div>
+          </div>
+          <span class="vote-btn" style="cursor:default;"${upVoters.length ? ` title="${escHtml(upVoters.join(', '))}"` : ''}>👍 ${idea.ups}</span>
+          <span class="vote-btn" style="cursor:default;"${dnVoters.length ? ` title="${escHtml(dnVoters.join(', '))}"` : ''}>👎 ${idea.downs}</span>
+        </div>`;
+    }).join('');
+  }
+
+  function renderPhotosTab() {
+    if (!archPhotos.length) return '<p class="loading-msg">No photos.</p>';
+    return `<div class="photo-grid">` +
+      archPhotos.map(p => `
+        <div class="photo-item" onclick="openLightbox('${escHtml(p.driveUrl)}')">
+          <img src="${escHtml(p.driveUrl)}" alt="${escHtml(p.caption || '')}">
+          <div class="photo-uploader">${escHtml(p.uploader)}${p.day ? ` <span class="photo-day">· ${escHtml(p.day)}</span>` : ''}</div>
+          ${p.caption ? `<div class="photo-caption">${escHtml(p.caption)}</div>` : ''}
+        </div>`).join('') +
+      `</div>`;
+  }
+
+  const tabDefs = [
+    { key: 'agenda', label: 'Agenda', render: renderAgendaTab },
+    { key: 'chat',   label: 'Chat',   render: renderChatTab   },
+    { key: 'ideas',  label: 'Ideas',  render: renderIdeasTab  },
+    { key: 'photos', label: 'Photos', render: renderPhotosTab }
+  ];
+
+  archiveTabs.innerHTML = tabDefs.map(t =>
+    `<a data-tab="${t.key}" style="cursor:pointer;">${t.label}</a>`
+  ).join('');
+
+  function switchTab(key) {
+    archiveTabs.querySelectorAll('a').forEach(a => a.classList.toggle('active', a.dataset.tab === key));
+    const def = tabDefs.find(t => t.key === key);
+    archiveDataEl.innerHTML = def ? def.render() : '';
+  }
+
+  archiveTabs.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => switchTab(a.dataset.tab));
+  });
+
+  switchTab('agenda');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
 
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -1446,20 +1687,24 @@ function formatAgendaTime(val) {
   return s;
 }
 
+<<<<<<< HEAD
 // ── COUNTDOWN ────────────────────────────────────────────
 
 const WEEKEND_START = new Date('2026-05-08T00:00:00+01:00');
 const WEEKEND_END   = new Date('2026-05-12T00:00:00+01:00');
+=======
+// ── COUNTDOWN ─────────────────────────────────────────────────────────────────
+>>>>>>> 995b460 (Make app fully config-driven to support multiple years without code changes)
 
 let countdownInterval = null;
 
 function updateCountdown() {
   const el = document.getElementById('weekend-strip');
-  if (!el) return;
+  if (!el || !weekendStart || !weekendEnd) return;
   const now = new Date();
 
-  if (now < WEEKEND_START) {
-    const diff = WEEKEND_START - now;
+  if (now < weekendStart) {
+    const diff = weekendStart - now;
     const days  = Math.floor(diff / 86400000);
     const hours = Math.floor((diff % 86400000) / 3600000);
     const mins  = Math.floor((diff % 3600000) / 60000);
@@ -1471,22 +1716,26 @@ function updateCountdown() {
     parts.push(String(secs).padStart(2,'0') + 's');
     el.className = '';
     el.innerHTML = `B Weekend in <span class="countdown-time">${parts.join(' ')}</span>`;
-  } else if (now < WEEKEND_END) {
+  } else if (now < weekendEnd) {
     const dayName = now.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'Europe/London' });
     const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/London' });
     el.className = 'live';
     el.textContent = `B Weekend is Live · ${dayName} ${dateStr}`;
     if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
   } else {
+    // weekendEnd is exclusive (midnight after the last day), so subtract 1 day for display.
+    const lastDay  = new Date(weekendEnd.getTime() - 86400000);
+    const startFmt = weekendStart.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/London' });
+    const endFmt   = lastDay.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/London' });
     el.className = 'over';
-    el.textContent = 'B Weekend · 8–11 May 2026 · What a weekend.';
+    el.textContent = `B Weekend · ${startFmt}–${endFmt} · What a weekend.`;
     if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
   }
 }
 
 function startCountdown() {
   updateCountdown();
-  if (new Date() < WEEKEND_END) countdownInterval = setInterval(updateCountdown, 1000);
+  if (weekendEnd && new Date() < weekendEnd) countdownInterval = setInterval(updateCountdown, 1000);
 }
 
 function escHtml(str) {
