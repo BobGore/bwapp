@@ -29,7 +29,6 @@ function ok(data) {
 }
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-// Reads a two-column (Key, Value) sheet into a plain object.
 
 function sheetToConfig(name) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -73,6 +72,16 @@ function addChat(payload) {
     payload.text,
     new Date().toISOString()
   ]);
+
+  // Trigger BYörk bot on @byork mention
+  if (payload.text && payload.text.toLowerCase().includes('@byork')) {
+    try {
+      askByork({ text: payload.text, author: payload.author });
+    } catch (e) {
+      console.error('BYörk trigger failed: ' + e.toString());
+    }
+  }
+
   return ok();
 }
 
@@ -101,7 +110,19 @@ function addIdea(payload) {
 
 function vote(payload) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.getSheetByName('Votes').appendRow([
+
+  // Prevent duplicate votes
+  let votesSheet = ss.getSheetByName('Votes');
+  if (!votesSheet) {
+    votesSheet = ss.insertSheet('Votes');
+    votesSheet.appendRow(['IdeaId', 'User', 'Direction', 'Timestamp']);
+  }
+  const existing = votesSheet.getDataRange().getValues().slice(1);
+  if (existing.some(r => String(r[0]) === String(payload.ideaId) && r[1] === payload.author)) {
+    return ok({ success: true, duplicate: true });
+  }
+
+  votesSheet.appendRow([
     payload.ideaId,
     payload.author,
     payload.direction,
@@ -113,7 +134,7 @@ function vote(payload) {
   const rows = ideasSheet.getDataRange().getValues();
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][0]) === String(payload.ideaId)) {
-      const col = payload.direction === 'up' ? 4 : 5; // D=ups, E=downs (1-indexed)
+      const col = payload.direction === 'up' ? 4 : 5;
       ideasSheet.getRange(i + 1, col).setValue((rows[i][col - 1] || 0) + 1);
       break;
     }
@@ -133,7 +154,8 @@ function uploadPhoto(payload) {
   );
   const file = folder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  const driveUrl = 'https://drive.google.com/uc?export=view&id=' + file.getId();
+  // Use lh3 URL format (consistent with existing photo data)
+  const driveUrl = 'https://lh3.googleusercontent.com/d/' + file.getId();
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.getSheetByName('Photos').appendRow([
@@ -162,7 +184,12 @@ function addAgendaItem(payload) {
 
 function logDevice(payload) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.getSheetByName('DeviceLog').appendRow([
+  let sheet = ss.getSheetByName('DeviceLog');
+  if (!sheet) {
+    sheet = ss.insertSheet('DeviceLog');
+    sheet.appendRow(['Timestamp', 'User', 'DeviceID', 'Fingerprint']);
+  }
+  sheet.appendRow([
     new Date().toISOString(),
     payload.user,
     payload.deviceId,
