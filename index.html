@@ -1429,6 +1429,7 @@ function renderArchiveData(data, weekend) {
   const archPhotos   = (data.photos   || []).slice(1).map(r => ({ id: r[0], uploader: r[1], caption: r[2], driveUrl: r[3], day: r[4] || '' }));
   const archComments = (data.comments || []).slice(1);
   const archVotes    = (data.votes    || []).slice(1).map(r => ({ ideaId: String(r[0]), author: r[1], direction: r[2] }));
+  const archPlaces   = (data.places   || []).slice(1).map(r => ({ name: r[0], category: r[1], location: r[2] || '', website: r[3] || '', notes: r[4] || '' }));
 
   function renderAgendaTab() {
     const days = ['Friday','Saturday','Sunday','Monday'];
@@ -1501,11 +1502,107 @@ function renderArchiveData(data, weekend) {
       `</div>`;
   }
 
+  function renderMapTab() {
+    return `
+      <div id="archive-leaflet-map" style="width:100%;height:420px;border:1px solid var(--border);border-radius:4px;margin-bottom:1rem;"></div>
+      <p style="font-size:0.75rem;color:var(--muted);margin-bottom:1.5rem;">
+        Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" style="color:var(--ale);">OpenStreetMap</a> contributors
+      </p>
+      <div id="archive-map-locations"></div>`;
+  }
+
+  async function initArchiveMap() {
+    const withLocation = archAgenda.filter(i => i.location);
+    const withPlaces   = archPlaces.filter(p => p.location);
+
+    archiveMap = L.map('archive-leaflet-map').setView([53.9590, -1.0815], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(archiveMap);
+    setTimeout(() => archiveMap && archiveMap.invalidateSize(), 100);
+
+    const bounds = [];
+
+    for (let i = 0; i < withLocation.length; i++) {
+      const item = withLocation[i];
+      if (i > 0) await new Promise(r => setTimeout(r, 1100));
+      try {
+        const query = item.location.startsWith('http') ? item.title : item.location;
+        const coords = await geocodeQuery(query);
+        if (coords && archiveMap) {
+          L.marker([coords.lat, coords.lng]).addTo(archiveMap)
+            .bindPopup(`<strong>${item.title}</strong><br>${item.day}${item.time ? ' · ' + formatAgendaTime(item.time) : ''}`);
+          bounds.push([coords.lat, coords.lng]);
+        }
+      } catch(e) {}
+    }
+
+    for (let i = 0; i < withPlaces.length; i++) {
+      const place = withPlaces[i];
+      await new Promise(r => setTimeout(r, 1100));
+      try {
+        const coords = await geocodeQuery(place.location);
+        if (coords && archiveMap) {
+          L.marker([coords.lat, coords.lng], { icon: redIcon }).addTo(archiveMap)
+            .bindPopup(`<strong>${place.name}</strong>${place.category ? '<br><em>' + place.category + '</em>' : ''}${place.notes ? '<br>' + place.notes : ''}`);
+          bounds.push([coords.lat, coords.lng]);
+        }
+      } catch(e) {}
+    }
+
+    if (archiveMap) {
+      if (bounds.length > 1) archiveMap.fitBounds(bounds, { padding: [30, 30] });
+      else if (bounds.length === 1) archiveMap.setView(bounds[0], 15);
+    }
+
+    // Location list below the map
+    const locEl = document.getElementById('archive-map-locations');
+    if (!locEl) return;
+    const days = ['Friday','Saturday','Sunday','Monday'];
+    let html = '';
+    days.forEach(day => {
+      const items = withLocation.filter(i => i.day === day);
+      if (!items.length) return;
+      html += `<div class="day-header" style="cursor:default;">${escHtml(day)}</div><div class="day-items">`;
+      items.forEach(i => {
+        html += `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0;border-top:1px solid var(--border);">
+            <div>
+              <div style="font-size:0.9rem;font-weight:500;">${escHtml(i.title)}</div>
+              ${i.time ? `<div style="font-size:0.78rem;color:var(--muted);font-family:'DM Mono',monospace;">${formatAgendaTime(i.time)}</div>` : ''}
+            </div>
+            <a class="map-location-link" href="${mapsUrl(i.location)}" target="_blank">📍 Open</a>
+          </div>`;
+      });
+      html += `</div>`;
+    });
+    if (withPlaces.length) {
+      const cats = [...new Set(withPlaces.map(p => p.category || 'Other'))];
+      cats.forEach(cat => {
+        const catPlaces = withPlaces.filter(p => (p.category || 'Other') === cat);
+        html += `<div class="day-header" style="cursor:default;color:var(--red);">${escHtml(cat)}</div><div class="day-items">`;
+        catPlaces.forEach(p => {
+          html += `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0;border-top:1px solid var(--border);">
+              <div>
+                <div style="font-size:0.9rem;font-weight:500;">${escHtml(p.name)}</div>
+                ${p.notes ? `<div style="font-size:0.78rem;color:var(--muted);">${escHtml(p.notes)}</div>` : ''}
+              </div>
+              <a class="map-location-link" href="${mapsUrl(p.location)}" target="_blank">📍 Open</a>
+            </div>`;
+        });
+        html += `</div>`;
+      });
+    }
+    locEl.innerHTML = html || '<p class="loading-msg">No locations added yet.</p>';
+  }
+
   const tabDefs = [
     { key: 'agenda', label: 'Agenda', render: renderAgendaTab },
     { key: 'chat',   label: 'Chat',   render: renderChatTab   },
     { key: 'ideas',  label: 'Ideas',  render: renderIdeasTab  },
-    { key: 'photos', label: 'Photos', render: renderPhotosTab }
+    { key: 'photos', label: 'Photos', render: renderPhotosTab },
+    { key: 'map',    label: 'Map',    render: renderMapTab    }
   ];
 
   archiveTabs.innerHTML = tabDefs.map(t =>
@@ -1513,9 +1610,12 @@ function renderArchiveData(data, weekend) {
   ).join('');
 
   function switchTab(key) {
+    // Destroy any existing archive map before replacing the DOM
+    if (archiveMap) { archiveMap.remove(); archiveMap = null; }
     archiveTabs.querySelectorAll('a').forEach(a => a.classList.toggle('active', a.dataset.tab === key));
     const def = tabDefs.find(t => t.key === key);
     archiveDataEl.innerHTML = def ? def.render() : '';
+    if (key === 'map') initArchiveMap();
   }
 
   archiveTabs.querySelectorAll('a').forEach(a => {
@@ -1537,6 +1637,7 @@ function mapsUrl(location) {
 }
 
 let leafletMap = null;
+let archiveMap  = null;
 let geocodedCache = null;
 let placeGeoCache = null;
 
