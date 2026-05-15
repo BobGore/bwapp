@@ -1064,8 +1064,8 @@ function applyConfig() {
 
   // Parse countdown dates from the live weekend's directory entry.
   if (liveWeekend) {
-    weekendStart = liveWeekend.startDate ? new Date(liveWeekend.startDate + 'T00:00:00+01:00') : null;
-    weekendEnd   = liveWeekend.endDate   ? new Date(liveWeekend.endDate   + 'T00:00:00+01:00') : null;
+    weekendStart = parseWeekendDate(liveWeekend.startDate);
+    weekendEnd   = parseWeekendDate(liveWeekend.endDate);
   }
 }
 
@@ -1633,6 +1633,15 @@ function renderArchiveData(data, weekend) {
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
+
+function parseWeekendDate(val) {
+  if (!val) return null;
+  const s = String(val);
+  // Sheets serialises date cells as full ISO timestamps — use as-is
+  if (s.includes('T')) return new Date(s);
+  // Plain YYYY-MM-DD string — treat as BST midnight
+  return new Date(s + 'T00:00:00+01:00');
+}
 
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
