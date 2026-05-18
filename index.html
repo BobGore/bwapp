@@ -1676,10 +1676,15 @@ async function initMap() {
   const withPlaces   = places.filter(p => p.location);
 
   if (!leafletMap) {
-    leafletMap = L.map('leaflet-map').setView([53.9590, -1.0815], 14);
+    leafletMap = L.map('leaflet-map').setView([54.5, -2.0], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(leafletMap);
+    if (appConfig.location) {
+      geocodeQuery(appConfig.location).then(coords => {
+        if (coords && leafletMap) leafletMap.setView([coords.lat, coords.lng], 13);
+      }).catch(() => {});
+    }
   } else {
     leafletMap.eachLayer(l => { if (l instanceof L.Marker) leafletMap.removeLayer(l); });
   }
@@ -1693,7 +1698,7 @@ async function initMap() {
       const item = withLocation[i];
       if (i > 0) await new Promise(r => setTimeout(r, 1100));
       try {
-        const query = item.location.startsWith('http') ? item.title + ', York' : item.location;
+        const query = item.location.startsWith('http') ? item.title + ', ' + (appConfig.location || '') : item.location;
         const coords = await geocodeQuery(query);
         if (coords) geocodedCache.push({ item, ...coords });
       } catch(e) { console.warn('Geocode failed for', item.title); }
@@ -1749,7 +1754,7 @@ function renderMapDays() {
     const dayId = 'mapday-' + day.toLowerCase();
     let directionsBtn = '';
     if (items.length >= 2) {
-      const venues = items.map(i => encodeURIComponent(i.location.startsWith('http') ? i.title + ', York' : i.location));
+      const venues = items.map(i => encodeURIComponent(i.location.startsWith('http') ? i.title + ', ' + (appConfig.location || '') : i.location));
       directionsBtn = `<a class="directions-btn" href="https://www.google.com/maps/dir/${venues.join('/')}" target="_blank">🗺 Directions for ${day}</a>`;
     }
     html += `
